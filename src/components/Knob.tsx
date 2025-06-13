@@ -1,25 +1,31 @@
-// src/components/Knob.jsx
 import React from 'react';
 
-export const Knob = ({ 
-  label, 
-  value, 
-  onChange, 
-  min = 0, 
-  max = 127 
-}) => {
+interface KnobProps {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+}
+
+// Export nommé recommandé
+export const Knob = ({
+  label,
+  value,
+  onChange,
+  min = 0,
+  max = 127
+}: KnobProps) => {
   return (
-    <div className="knob-container">
-      <label>{label}</label>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="knob"
-      />
-      <span>{value}</span>
-    </div>
+    <label >{label}
+    <input
+      type="range"
+      min={min}
+      max={max}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="knob"
+    />
+    </label>
   );
 };

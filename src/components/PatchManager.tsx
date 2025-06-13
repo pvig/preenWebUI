@@ -1,7 +1,8 @@
 // src/components/PresetManager.jsx
-import { savePatch } from '../utils/patchManager';
+import { usePatchStore } from '../stores/patchStore';
+import {savePatch} from '../utils/patchManager';
 
-export const PresetManager = () => {
+function PatchManager () {
   const { patch } = usePatchStore();
 
   const handleSave = () => {
@@ -23,3 +24,5 @@ export const PresetManager = () => {
     </div>
   );
 };
+
+export default PatchManager;
