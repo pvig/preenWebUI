@@ -29,11 +29,11 @@ export interface AdsrProps extends AdsrValues {
   onChange: (adsr: AdsrValues) => void;
 }
 
-function EnvelopeGraph({ 
-  attack, 
-  decay, 
-  sustain, 
-  release, 
+function EnvelopeGraph({
+  attack,
+  decay,
+  sustain,
+  release,
   curves = {
     attack: 'linear',
     decay: 'linear',
@@ -50,10 +50,10 @@ function EnvelopeGraph({
   // Stocke les valeurs actuelles pour les contraintes
   const currentValues = useRef<AdsrValues>({ attack, decay, sustain, release, curves });
   const currentPoints = useRef<Point[]>([]);
-  const dragOffset = useRef<{x: number, y: number} | null>(null);
+  const dragOffset = useRef<{ x: number, y: number } | null>(null);
 
   const lineRef = useRef<d3.Selection<SVGPathElement, Point[], null, undefined> | null>(null);
-  const circlesRef = useRef<{[key: string]: d3.Selection<SVGCircleElement, Point, null, undefined>}>({});
+  const circlesRef = useRef<{ [key: string]: d3.Selection<SVGCircleElement, Point, null, undefined> }>({});
 
   // Couleurs distinctives
   const pointColors = {
@@ -69,11 +69,11 @@ function EnvelopeGraph({
     for (let i = 0; i <= 20; i++) {
       const t = i / 20;
       let factor = t;
-      
+
       if (curveType === 'exponential') factor = t === 0 ? 0 : Math.pow(2, 10 * (t - 1));
       if (curveType === 'logarithmic') factor = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
       if (curveType === 'user') factor = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-      
+
       points.push({
         x: start.x + (end.x - start.x) * t,
         y: start.y + (end.y - start.y) * factor
@@ -95,14 +95,30 @@ function EnvelopeGraph({
   // Contraintes strictes sur l'axe X
   const constrainPoint = (key: string, newX: number): number => {
     const { attack, decay, sustain, release } = currentValues.current;
-    
+
     switch (key) {
-      case 'attack': return Math.min(Math.max(0, newX), decay.time - 5);
-      case 'decay': return Math.max(attack.time + 5, Math.min(sustain.time - 5, newX));
-      case 'sustain': return Math.max(decay.time + 5, Math.min(release.time - 5, newX));
-      case 'release': return Math.max(sustain.time + 5, Math.min(100, newX));
+      case 'attack': return Math.min(Math.max(0, newX), decay.time);
+      case 'decay': return Math.max(attack.time, Math.min(sustain.time, newX));
+      case 'sustain': return Math.max(decay.time, Math.min(release.time, newX));
+      case 'release': return Math.max(sustain.time, Math.min(100, newX));
       default: return newX;
     }
+  };
+
+  // État pour les valeurs en cours d'édition
+  const [liveValues, setLiveValues] = useState<{
+    time: number;
+    level: number;
+    point: string;
+  } | null>(null);
+
+  // Fonction pour mettre à jour les valeurs en direct
+  const updateLiveValues = (point: string, time: number, level: number) => {
+    setLiveValues({
+      point,
+      time: Math.round(time),
+      level: Math.round(level)
+    });
   };
 
   // Met à jour l'état local et notifie le parent
@@ -187,20 +203,23 @@ function EnvelopeGraph({
       .attr('fill', 'none');
 
     const dragHandler = d3.drag<SVGCircleElement, Point, Point>()
-      .on('start', function(event) {
+      .on('start', function (event) {
         const key = d3.select(this).attr('data-key');
         setDragging(key);
-        
+
         const pointIndex = ['attack', 'decay', 'sustain', 'release'].indexOf(key) + 1;
         const point = currentPoints.current[pointIndex];
+        const mouseX = xScale.invert(event.x);
+        const mouseY = yScale.invert(event.y);
         dragOffset.current = {
-          x: xScale.invert(event.x) - point.x,
-          y: yScale.invert(event.y) - point.y
+          x: mouseX - point.x,
+          y: mouseY - point.y
         };
-        
+
         d3.select(this).attr('fill', '#F56565');
+        updateLiveValues(key, point.x, point.y);
       })
-      .on('drag', function(event) {
+      .on('drag', function (event) {
         const key = d3.select(this).attr('data-key');
         if (!dragOffset.current) return;
 
@@ -212,10 +231,13 @@ function EnvelopeGraph({
         const constrainedX = Math.max(0, Math.min(100, newX));
         const constrainedY = Math.max(0, Math.min(100, newY));
 
+        // Mise à jour des valeurs en direct avant le rendu
+        updateLiveValues(key, newX, newY);
+
         // Met à jour l'affichage
         const pointIndex = ['attack', 'decay', 'sustain', 'release'].indexOf(key) + 1;
         currentPoints.current[pointIndex] = { x: constrainedX, y: constrainedY };
-        
+
         d3.select(this)
           .attr('cx', xScale(constrainedX))
           .attr('cy', yScale(constrainedY));
@@ -225,7 +247,7 @@ function EnvelopeGraph({
         // Notifie le parent
         handleParamChange(key, constrainedX, constrainedY);
       })
-      .on('end', function() {
+      .on('end', function () {
         setDragging(null);
         const key = d3.select(this).attr('data-key');
         d3.select(this).attr('fill', pointColors[key as keyof typeof pointColors]);
@@ -254,25 +276,25 @@ function EnvelopeGraph({
       <svg ref={svgRef} className="w-full h-full" />
       {dragging && (
         <div className="tooltip">
-          Editing: {dragging} | 
+          Editing: {dragging} |
           Time: {Math.round(
             dragging === 'attack' ? currentValues.current.attack.time :
-            dragging === 'decay' ? currentValues.current.decay.time :
-            dragging === 'sustain' ? currentValues.current.sustain.time : 
-            currentValues.current.release.time
-          )}% | 
+              dragging === 'decay' ? currentValues.current.decay.time :
+                dragging === 'sustain' ? currentValues.current.sustain.time :
+                  currentValues.current.release.time
+          )}% |
           Level: {Math.round(
             dragging === 'attack' ? currentValues.current.attack.level :
-            dragging === 'decay' ? currentValues.current.decay.level :
-            dragging === 'sustain' ? currentValues.current.sustain.level : 
-            currentValues.current.release.level
+              dragging === 'decay' ? currentValues.current.decay.level :
+                dragging === 'sustain' ? currentValues.current.sustain.level :
+                  currentValues.current.release.level
           )}%
         </div>
       )}
     </div>
   );
 
-  
+
 }
 
 export default EnvelopeGraph;
