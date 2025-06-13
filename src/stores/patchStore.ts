@@ -34,7 +34,11 @@ export const usePatchStore = create((set) => ({
     const keys = path.split('.');
     const lastKey = keys.pop();
     keys.reduce((obj, key) => obj[key], newState)[lastKey] = value;
-    console.log("newState", newState);
+    //console.log("newState", newState);
     return newState;
-  })
+  }),
+
+  setEnv: (path, env) => {
+    console.log("setEnv", path, env);
+  }
 }));

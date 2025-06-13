@@ -8,10 +8,10 @@ interface OperatorPanelProps {
 }
 
 function OperatorPanel({opNumber }: OperatorPanelProps) {
-  const { patch, updateParam } = usePatchStore();
+  const { patch, updateParam, setEnv } = usePatchStore();
   const op = patch.operators[`op${opNumber}`];
   const envelope = op.env;
-  console.log("envelope", opNumber, envelope);
+  //console.log("envelope", opNumber, envelope);
   return (
     <div>
       <Knob
@@ -25,9 +25,14 @@ function OperatorPanel({opNumber }: OperatorPanelProps) {
         decay={envelope.decay}
         sustain={envelope.sustain}
         release={envelope.release}
+        curves={{
+          attack: 'exponential',
+          decay: 'logarithmic', 
+          release: 'user'
+        }}
         onChange={(newAdsr) => {
-          console.log("newAdsr", newAdsr);
-          // Envoyer les nouvelles valeurs au synthé via MIDI
+          // Mise à jour globale
+          setEnv(`patch.operators.op${opNumber}.env`,newAdsr);
         }}
       />
     </div>
