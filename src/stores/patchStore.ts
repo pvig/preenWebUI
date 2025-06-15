@@ -1,21 +1,23 @@
 // src/stores/patchStore.mjs
 import { create } from 'zustand';
+import { initialAdsr } from '../types/adsr';
 
-// Configuration des envelopes par défaut
-const defaultEnvelope = {
-  attack: { level: 64, time: 0 },
-  decay: { level: 0, time: 10 },
-  sustain: { level: 64, time: 40 },
-  release: { level: 64, time: 100 }
-};
+interface Operator {
+  freq: number; // 0-127
+  env: AdsrState;
+}
+interface PatchState {
+  operators: {
+    op1: Operator;
+    op2: Operator;
+    op3: Operator;
+    op4: Operator;
+  };
 
-// Configuration des opérateurs par défaut
-const defaultOperators = {
-  op1: { freq: 64, env: defaultEnvelope },
-  op2: { freq: 64, env: defaultEnvelope },
-  op3: { freq: 64, env: defaultEnvelope },
-  op4: { freq: 64, env: defaultEnvelope }
-};
+  selectedOperator: number; // 1-4
+  updateOperator: (opNumber: number, updates: Partial<Operator>) => void;
+  updateAdsr: (opNumber: number, adsr: Partial<AdsrValues>) => void;
+}
 
 // Configuration du filtre par défaut
 const defaultFilter = {
@@ -23,22 +25,43 @@ const defaultFilter = {
   resonance: 40
 };
 
-export const usePatchStore = create((set) => ({
-  patch: {
-    operators: JSON.parse(JSON.stringify(defaultOperators)),
-    filter: JSON.parse(JSON.stringify(defaultFilter)),
-  },
 
-  updateParam: (path, value) => set(state => {
-    const newState = JSON.parse(JSON.stringify(state));
-    const keys = path.split('.');
-    const lastKey = keys.pop();
-    keys.reduce((obj, key) => obj[key], newState)[lastKey] = value;
-    //console.log("newState", newState);
-    return newState;
+export const usePatchStore = create<PatchState>((set) => ({
+  operators: {
+    op1: { freq: 64, env: initialAdsr },
+    op2: { freq: 64, env: initialAdsr },
+    op3: { freq: 64, env: initialAdsr },
+    op4: { freq: 64, env: initialAdsr }
+  },
+  selectedOperator: 1,
+
+  updateOperator: (opNumber, updates) => set(state => {
+    const opKey = `op${opNumber}` as keyof typeof state.operators;
+    return {
+      operators: {
+        ...state.operators,
+        [opKey]: {
+          ...state.operators[opKey],
+          ...updates
+        }
+      }
+    };
   }),
 
-  setEnv: (path, env) => {
-    console.log("setEnv", path, env);
-  }
+  updateAdsr: (opNumber, adsr) => set(state => {
+    console.log("updateAdsr", state);
+    const opKey = `op${opNumber}` as keyof typeof state.operators;
+    return {
+      operators: {
+        ...state.operators,
+        [opKey]: {
+          ...state.operators[opKey],
+          env: {
+            ...state.operators[opKey].env,
+            ...adsr
+          }
+        }
+      }
+    };
+  })
 }));

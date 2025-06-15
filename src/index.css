@@ -75,9 +75,7 @@ button:focus-visible {
 
 .tooltip {
   position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
+  transform: translate(30px, -30px);
   background: rgba(0,0,0,0.7);
   color: white;
   padding: 5px 10px;

@@ -1,42 +1,40 @@
-// OperatorPanel.tsx
 import { usePatchStore } from '../stores/patchStore';
-import { Knob } from './Knob';
 import EnvelopeGraph from './EnvelopeGraph';
+import Knob from './Knob';
 
 interface OperatorPanelProps {
-  opNumber: number
+  opNumber: number; // 1 à 4
 }
 
-function OperatorPanel({opNumber }: OperatorPanelProps) {
-  const { patch, updateParam, setEnv } = usePatchStore();
-  const op = patch.operators[`op${opNumber}`];
-  const envelope = op.env;
-  //console.log("envelope", opNumber, envelope);
+export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
+  const { operators, updateOperator, selectedOperator } = usePatchStore();
+  const operator = operators[`op${opNumber}` as keyof typeof operators];
+
+  const handleFrequencyChange = (newFreq: number) => {
+    updateOperator(opNumber, { freq: newFreq });
+  };
+
   return (
-    <div>
-      <Knob
-        label="Fréquence"
-        value={op.freq}
-        onChange={(v) => updateParam(`patch.operators.op${opNumber}.freq`, v)}
+    <div className={`operator-panel ${opNumber === selectedOperator ? 'active' : ''}`}>
+      <h3>Operator {opNumber}</h3>
+      
+      {/* Contrôle de fréquence */}
+      <Knob 
+        label="Frequency"
+        value={operator.freq}
+        onChange={handleFrequencyChange}
+        min={0}
+        max={127}
       />
-      <br/>
+      
+      {/* Éditeur d'enveloppe */}
       <EnvelopeGraph
-        attack={envelope.attack}
-        decay={envelope.decay}
-        sustain={envelope.sustain}
-        release={envelope.release}
-        curves={{
-          attack: 'exponential',
-          decay: 'logarithmic', 
-          release: 'user'
-        }}
-        onChange={(newAdsr) => {
-          // Mise à jour globale
-          setEnv(`patch.operators.op${opNumber}.env`,newAdsr);
-        }}
+        operatorNumber={opNumber}
       />
+      
+      {/* Autres contrôles d'opérateur... */}
     </div>
   );
 };
 
-export default OperatorPanel;
+export default OperatorPanel

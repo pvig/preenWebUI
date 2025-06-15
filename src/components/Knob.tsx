@@ -28,3 +28,5 @@ export const Knob = ({
     </label>
   );
 };
+
+export default Knob;
