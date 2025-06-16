@@ -69,8 +69,6 @@ export const MidiMenu = () => {
   return (
     <div className="midi-menu">
       <div className="midi-ports">
-        <h3>Configuration MIDI</h3>
-        
         <div className="midi-port-select">
           <label>
             Entrée MIDI:

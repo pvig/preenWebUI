@@ -1,9 +1,4 @@
 /* src/components/Knob.module.css */
 .knob {
-  -webkit-appearance: none;
-  background: linear-gradient(to right, #4f46e5, #10b981);
-  height: 80px;
-  width: 80px;
-  border-radius: 50%;
   cursor: grab;
 }

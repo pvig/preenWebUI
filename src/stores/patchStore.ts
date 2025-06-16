@@ -3,11 +3,12 @@ import { create } from 'zustand';
 import { initialAdsr, type AdsrState } from '../types/adsr';
 
 // Types pour une meilleure maintenabilité
-type OperatorNumber = 1 | 2 | 3 | 4;
+type OperatorNumber = 1 | 2 | 3 | 4 | 5 | 6;
 type OperatorKey = `op${OperatorNumber}`;
 
 interface Operator {
   freq: number; // 0-127
+  fineTune: number; // 0-127
   env: AdsrState;
   enabled?: boolean; // Nouveau champ optionnel
 }
@@ -39,7 +40,9 @@ const defaultPatch: Patch = {
     op1: { freq: 64, env: initialAdsr, enabled: true },
     op2: { freq: 64, env: initialAdsr, enabled: true },
     op3: { freq: 64, env: initialAdsr, enabled: true },
-    op4: { freq: 64, env: initialAdsr, enabled: true }
+    op4: { freq: 64, env: initialAdsr, enabled: true },
+    op5: { freq: 64, env: initialAdsr, enabled: true },
+    op6: { freq: 64, env: initialAdsr, enabled: true }
   },
   algorithm: 1
 };

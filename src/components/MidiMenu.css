@@ -1,12 +1,19 @@
 .midi-menu {
   background: #2d3748;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.midi-ports {
+  display: flex;
+}
+
+.midi-ports h3 {
+  color:#fff;
 }
 
 .midi-port-select {
-  margin: 0.5rem 0;
+  margin: 0.5rem;
 }
 
 .midi-port-select label {
@@ -27,7 +34,7 @@
 .midi-actions {
   display: flex;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin: 1rem;
 }
 
 .midi-button {

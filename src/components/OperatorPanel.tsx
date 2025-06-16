@@ -13,6 +13,9 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
   const handleFrequencyChange = (newFreq: number) => {
     updateOperator(opNumber, { freq: newFreq });
   };
+  const handleFineTuneChange = (newTuning: number) => {
+    updateOperator(opNumber, { fineTune: newTuning });
+  };
 
   return (
     <div className={`operator-panel ${opNumber === selectedOperator ? 'active' : ''}`}>
@@ -23,6 +26,15 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
         label="Frequency"
         value={operator.freq}
         onChange={handleFrequencyChange}
+        min={0}
+        max={127}
+      />
+      <br/>
+      {/* Contrôle de fréquence */}
+      <Knob 
+        label="Fine tune"
+        value={operator.fineTune}
+        onChange={handleFineTuneChange}
         min={0}
         max={127}
       />

@@ -1,11 +1,10 @@
 import OperatorPanel from '../components/OperatorPanel';
 
 export function PatchEditor() {
-  const operators = [1, 2, 3, 4];
+  const operators = [1, 2, 3, 4, 5, 6];
 
   return (
     <div className="editor-container">
-      <h2>Édition de Patch</h2>
       <div className="operator-grid">
         {operators.map((op) => (
           <OperatorPanel 
