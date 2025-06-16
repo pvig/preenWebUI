@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { PatchEditor } from './screens/PatchEditor';
 import { EffectsEditor } from './screens/EffectsEditor';
 import { PatchLibrary } from './screens/PatchLibrary';
+import { MidiMenu } from './components/MidiMenu';
 
 type AppScreen = 'patch' | 'effects' | 'library';
 
@@ -10,6 +11,9 @@ export default function App() {
 
   return (
     <div className="app-container">
+      <header>
+        <MidiMenu />
+      </header>
       <nav className="main-nav">
         <button onClick={() => setCurrentScreen('patch')} className={currentScreen === 'patch' ? 'active' : ''}>
           Patch

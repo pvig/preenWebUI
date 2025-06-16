@@ -1,0 +1,51 @@
+.midi-menu {
+  background: #2d3748;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.midi-port-select {
+  margin: 0.5rem 0;
+}
+
+.midi-port-select label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #e2e8f0;
+}
+
+.midi-port-select select {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background: #4a5568;
+  color: white;
+  border: 1px solid #718096;
+}
+
+.midi-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.midi-button {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background: #4299e1;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.midi-button:hover {
+  background: #3182ce;
+}
+
+.midi-button:disabled {
+  background: #4a5568;
+  cursor: not-allowed;
+}

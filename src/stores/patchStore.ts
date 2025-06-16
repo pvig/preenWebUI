@@ -1,67 +1,132 @@
-// src/stores/patchStore.mjs
+// src/stores/patchStore.ts
 import { create } from 'zustand';
-import { initialAdsr } from '../types/adsr';
+import { initialAdsr, type AdsrState } from '../types/adsr';
+
+// Types pour une meilleure maintenabilité
+type OperatorNumber = 1 | 2 | 3 | 4;
+type OperatorKey = `op${OperatorNumber}`;
 
 interface Operator {
   freq: number; // 0-127
   env: AdsrState;
+  enabled?: boolean; // Nouveau champ optionnel
 }
+
+interface Patch {
+  name: string;
+  operators: Record<OperatorKey, Operator>;
+  algorithm: number;
+  // Ajoutez d'autres champs de patch au besoin
+}
+
 interface PatchState {
-  operators: {
-    op1: Operator;
-    op2: Operator;
-    op3: Operator;
-    op4: Operator;
-  };
-
-  selectedOperator: number; // 1-4
-  updateOperator: (opNumber: number, updates: Partial<Operator>) => void;
-  updateAdsr: (opNumber: number, adsr: Partial<AdsrValues>) => void;
+  currentPatch: Patch;
+  operators: Record<OperatorKey, Operator>;
+  selectedOperator: OperatorNumber;
+  
+  // Actions
+  pushPatch: () => void;
+  pullPatch: (patch: Partial<Patch>) => void;
+  updateOperator: (opNumber: OperatorNumber, updates: Partial<Operator>) => void;
+  updateAdsr: (opNumber: OperatorNumber, adsr: Partial<AdsrState>) => void;
+  selectOperator: (opNumber: OperatorNumber) => void;
+  resetOperator: (opNumber: OperatorNumber) => void;
 }
 
-// Configuration du filtre par défaut
-const defaultFilter = {
-  cutoff: 60,
-  resonance: 40
+const defaultPatch: Patch = {
+  name: 'Init Patch',
+  operators: {
+    op1: { freq: 64, env: initialAdsr, enabled: true },
+    op2: { freq: 64, env: initialAdsr, enabled: true },
+    op3: { freq: 64, env: initialAdsr, enabled: true },
+    op4: { freq: 64, env: initialAdsr, enabled: true }
+  },
+  algorithm: 1
 };
 
-
-export const usePatchStore = create<PatchState>((set) => ({
-  operators: {
-    op1: { freq: 64, env: initialAdsr },
-    op2: { freq: 64, env: initialAdsr },
-    op3: { freq: 64, env: initialAdsr },
-    op4: { freq: 64, env: initialAdsr }
-  },
+export const usePatchStore = create<PatchState>((set, get) => ({
+  currentPatch: defaultPatch,
+  operators: defaultPatch.operators,
   selectedOperator: 1,
 
+  pushPatch: () => {
+    const { currentPatch } = get();
+    // Validation supplémentaire avant envoi
+    if (!currentPatch.name) {
+      console.warn('Le patch doit avoir un nom');
+      return;
+    }
+    console.log('Envoi du patch:', JSON.stringify(currentPatch, null, 2));
+    // Ici vous pourriez ajouter la logique MIDI réelle
+  },
+
+  pullPatch: (patch) => {
+    set({
+      currentPatch: {
+        ...defaultPatch, // Conserve les valeurs par défaut pour les champs manquants
+        ...patch
+      },
+      operators: patch.operators || defaultPatch.operators
+    });
+  },
+
   updateOperator: (opNumber, updates) => set(state => {
-    const opKey = `op${opNumber}` as keyof typeof state.operators;
+    const opKey: OperatorKey = `op${opNumber}`;
+    const updatedOperators = {
+      ...state.operators,
+      [opKey]: {
+        ...state.operators[opKey],
+        ...updates
+      }
+    };
+
     return {
-      operators: {
-        ...state.operators,
-        [opKey]: {
-          ...state.operators[opKey],
-          ...updates
-        }
+      operators: updatedOperators,
+      currentPatch: {
+        ...state.currentPatch,
+        operators: updatedOperators
       }
     };
   }),
 
   updateAdsr: (opNumber, adsr) => set(state => {
-    console.log("updateAdsr", state);
-    const opKey = `op${opNumber}` as keyof typeof state.operators;
+    const opKey: OperatorKey = `op${opNumber}`;
+    const updatedEnv = {
+      ...state.operators[opKey].env,
+      ...adsr
+    };
+
+    const updatedOperators = {
+      ...state.operators,
+      [opKey]: {
+        ...state.operators[opKey],
+        env: updatedEnv
+      }
+    };
+
     return {
+      operators: updatedOperators,
+      currentPatch: {
+        ...state.currentPatch,
+        operators: updatedOperators
+      }
+    };
+  }),
+
+  selectOperator: (opNumber) => {
+    set({ selectedOperator: opNumber });
+  },
+
+  resetOperator: (opNumber) => {
+    const opKey: OperatorKey = `op${opNumber}`;
+    set(state => ({
       operators: {
         ...state.operators,
         [opKey]: {
-          ...state.operators[opKey],
-          env: {
-            ...state.operators[opKey].env,
-            ...adsr
-          }
+          ...defaultPatch.operators[opKey],
+          freq: state.operators[opKey].freq // Garde la fréquence actuelle
         }
       }
-    };
-  })
+    }));
+  }
 }));

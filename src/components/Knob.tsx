@@ -1,3 +1,4 @@
+import './Knob.css';
 
 interface KnobProps {
   label: string;

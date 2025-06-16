@@ -2,19 +2,17 @@ import * as d3 from 'd3';
 import { useEffect, useRef, useState } from 'react';
 import { usePatchStore } from '../stores/patchStore';
 
-import { type AdsrValues, type CurveType } from '../types/adsr';
+import { type AdsrState, type CurveType } from '../types/adsr';
 
 interface EnvelopeGraphProps {
   operatorNumber: number;
-  adsr: AdsrValues;
-  onChange: (newAdsr: Partial<AdsrValues>) => void;
 }
 
 export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
   const { operators, updateAdsr } = usePatchStore();
   //console.log("operators", operatorNumber);
   const adsr = operators[`op${operatorNumber}` as keyof typeof operators].env;
-
+  
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const margin = { top: 20, right: 20, bottom: 30, left: 30 };
@@ -23,11 +21,11 @@ export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
 
   // Références pour les éléments D3
   const lineRef = useRef<d3.Selection<SVGPathElement, Point[], null, undefined> | null>(null);
-  const circlesRef = useRef<{[key: string]: d3.Selection<SVGCircleElement, Point, null, undefined>}>({});
+  const circlesRef = useRef<{ [key: string]: d3.Selection<SVGCircleElement, Point, null, undefined> }>({});
 
   // Stocke les positions actuelles avec leur contrainte
   const currentPoints = useRef<Point[]>([]);
-  const dragOffset = useRef<{x: number, y: number} | null>(null);
+  const dragOffset = useRef<{ x: number, y: number } | null>(null);
 
   // Couleurs distinctes pour chaque point
   const pointColors = {
@@ -42,11 +40,11 @@ export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
   // Génère les points intermédiaires selon le type de courbe
   const generateCurvePoints = (start: Point, end: Point, curveType: CurveType, numPoints = 20): Point[] => {
     const points: Point[] = [];
-    
+
     for (let i = 0; i <= numPoints; i++) {
       const t = i / numPoints;
       let factor: number;
-      
+
       switch (curveType) {
         case 'exponential':
           factor = t === 0 ? 0 : Math.pow(2, 10 * (t - 1));
@@ -60,25 +58,25 @@ export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
         default: // 'linear'
           factor = t;
       }
-      
+
       points.push({
         x: start.x + (end.x - start.x) * t,
         y: start.y + (end.y - start.y) * factor
       });
     }
-    
+
     return points;
   };
 
   // Construit le chemin complet de l'enveloppe
   const generateFullPath = (points: Point[]): Point[] => {
     const fullPath: Point[] = [];
-    
+
     fullPath.push(...generateCurvePoints(points[0], points[1], adsr.curves?.attack || 'linear'));
     fullPath.push(...generateCurvePoints(points[1], points[2], adsr.curves?.decay || 'linear').slice(1));
     fullPath.push(...generateCurvePoints(points[2], points[3], 'linear').slice(1));
     fullPath.push(...generateCurvePoints(points[3], points[4], adsr.curves?.release || 'linear').slice(1));
-    
+
     return fullPath;
   };
 
@@ -88,13 +86,13 @@ export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
 
     switch (key) {
       case 'attack':
-        return Math.min(newX, decay.x );
+        return Math.min(newX, decay.x);
       case 'decay':
-        return Math.max(attack.x , Math.min(sustain.x , newX));
+        return Math.max(attack.x, Math.min(sustain.x, newX));
       case 'sustain':
-        return Math.max(decay.x , Math.min(release.x , newX));
+        return Math.max(decay.x, Math.min(release.x, newX));
       case 'release':
-        return Math.max(sustain.x , newX);
+        return Math.max(sustain.x, newX);
       default:
         return newX;
     }
@@ -157,10 +155,10 @@ export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
 
     // Gestion du drag
     const dragHandler = d3.drag<SVGCircleElement, Point, Point>()
-      .on('start', function(event) {
+      .on('start', function (event) {
         const key = d3.select(this).attr('data-key');
         setDragging(key);
-        
+
         const pointIndex = ['attack', 'decay', 'sustain', 'release'].indexOf(key) + 1;
         const point = currentPoints.current[pointIndex];
         const mouseX = xScale.invert(event.x);
@@ -169,10 +167,10 @@ export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
           x: mouseX - point.x,
           y: mouseY - point.y
         };
-        
+
         d3.select(this).attr('fill', '#F56565');
       })
-      .on('drag', function(event) {
+      .on('drag', function (event) {
         const key = d3.select(this).attr('data-key');
         if (!dragOffset.current) return;
 
@@ -187,7 +185,7 @@ export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
         // Mise à jour des points
         const pointIndex = ['attack', 'decay', 'sustain', 'release'].indexOf(key) + 1;
         currentPoints.current[pointIndex] = { x: constrainedX, y: constrainedY };
-        
+
         // Mise à jour visuelle
         d3.select(this)
           .attr('cx', xScale(constrainedX))
@@ -196,7 +194,7 @@ export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
         lineRef.current?.datum(generateFullPath(currentPoints.current)).attr('d', lineGenerator);
 
         // Préparation des nouvelles valeurs
-        const updates: Partial<AdsrValues> = {};
+        const updates: Partial<AdsrState> = {};
         if (key === 'attack') updates.attack = { time: constrainedX, level: constrainedY };
         if (key === 'decay') updates.decay = { time: constrainedX, level: constrainedY };
         if (key === 'sustain') updates.sustain = { time: constrainedX, level: constrainedY };
@@ -207,7 +205,7 @@ export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
           updateAdsr(operatorNumber, updates);
         });
       })
-      .on('end', function() {
+      .on('end', function () {
         setDragging(null);
         dragOffset.current = null;
         const key = d3.select(this).attr('data-key');
@@ -237,16 +235,16 @@ export function EnvelopeGraph({ operatorNumber }: EnvelopeGraphProps) {
       <svg ref={svgRef} className="w-full h-full" />
       {dragging && (
         <div className="tooltip">
-          Editing: {dragging} | 
+          Editing: {dragging} |
           Time: {Math.round(
             dragging === 'attack' ? adsr.attack.time :
-            dragging === 'decay' ? adsr.decay.time :
-            dragging === 'sustain' ? adsr.sustain.time : adsr.release.time
-          )}% | 
+              dragging === 'decay' ? adsr.decay.time :
+                dragging === 'sustain' ? adsr.sustain.time : adsr.release.time
+          )}% |
           Level: {Math.round(
             dragging === 'attack' ? adsr.attack.level :
-            dragging === 'decay' ? adsr.decay.level :
-            dragging === 'sustain' ? adsr.sustain.level : adsr.release.level
+              dragging === 'decay' ? adsr.decay.level :
+                dragging === 'sustain' ? adsr.sustain.level : adsr.release.level
           )}%
         </div>
       )}

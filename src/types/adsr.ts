@@ -6,7 +6,7 @@ export interface AdsrPoint {
     time: number;  // 0-100
   }
   
-  export interface AdsrValues {
+  export interface AdsrState {
     attack: AdsrPoint;
     decay: AdsrPoint;
     sustain: AdsrPoint;
@@ -18,7 +18,7 @@ export interface AdsrPoint {
     };
   }
 
-  export const initialAdsr: AdsrValues = {
+  export const initialAdsr: AdsrState = {
     attack: { time: 20, level: 100 },
     decay: { time: 40, level: 60 },
     sustain: { time: 70, level: 60 },
