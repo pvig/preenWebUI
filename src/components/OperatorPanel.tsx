@@ -30,8 +30,8 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
       <h3>Operator {opNumber}</h3>
 
       <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
-        <FrequencyKnob label="Frequency" initial={operator.freq} min={0} max={22000} onChange={handleFrequencyChange} />
-        <FineTuneKnob label="Finetuning" initial={operator.fineTune} min={-1} max={1} onChange={handleFineTuneChange} />
+        <FrequencyKnob label="Frequency" initial={operator.freq} min={0} max={16} onChange={handleFrequencyChange} />
+        <FineTuneKnob label="Finetuning" initial={operator.fineTune} min={-9} max={9} onChange={handleFineTuneChange} />
       </div>
 
       <AdsrControl

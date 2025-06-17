@@ -123,3 +123,36 @@ button {
   display: flex;
   flex-direction: column;
 }
+
+.algorithm-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 250px;
+  margin: 0 auto;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.controls button {
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  border: none;
+  background: #4CAF50;
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.info {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
