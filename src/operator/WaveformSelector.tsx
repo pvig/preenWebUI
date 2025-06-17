@@ -13,7 +13,9 @@ export const WaveformSelector = ({ value, onChange }) => {
       <label>Forme d'onde</label>
       <Select
         value={value}
-        onChange={(e) => onChange('waveform', e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
+        size="small"
+        variant="standard"
       >
         {WAVEFORMS.map(wave => (
           <MenuItem key={wave.value} value={wave.value}>

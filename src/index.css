@@ -3,9 +3,6 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -65,6 +62,11 @@ button:focus-visible {
   }
 }
 
+.operator-panel {
+  background-color: #f8f8f8;
+  padding: 0.5em;
+}
+
 .envelope-editor {
   position: relative;
   background: #1e1e2e;
@@ -89,11 +91,20 @@ button:focus-visible {
   color: #f8f8f2;
 }
 
-.editor-container {
-  padding: 1em;
+.editor-container, .matrix-container, .library-container {
+  padding: 0.5em 0 0 0;
 }
+
 .main-nav {
   background-color: #ddd;
+}
+h3 {
+  margin: 0.5em 1em;
+  color: #bbb;
+}
+button {
+  background-color: #eee;
+  color: black;
 }
 .main-nav button {
   border-bottom-left-radius:0;
@@ -101,10 +112,14 @@ button:focus-visible {
 }
 .main-nav button.active {
   background-color: #fff;
+  color: black;
 }
 
 .operator-grid {
   display: flex;
   flex-wrap: wrap;
-  padding: 0.5em;
+}
+.operator-control {
+  display: flex;
+  flex-direction: column;
 }

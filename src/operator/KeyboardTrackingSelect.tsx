@@ -1,18 +1,28 @@
-import { ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Select, MenuItem } from '@mui/material';
+
+
+const trackingModes = [
+  { value: 0, label: 'Fixed' },
+  { value: 1, label: 'Keyboard' },
+  { value: 2, label: 'Finetune Hz' }
+];
 
 export const KeyboardTrackingSelect = ({ value, onChange }) => {
   return (
     <div className="operator-control">
       <label>Tracking clavier</label>
-      <ToggleButtonGroup
-        exclusive
+      <Select
         value={value}
-        onChange={(_, newValue) => onChange('follows', newValue)}
+        onChange={(e) => onChange(e.target.value)}
+        size="small"
+        variant="standard"
       >
-        <ToggleButton value="fixed">Fixé</ToggleButton>
-        <ToggleButton value="keyboard">Clavier</ToggleButton>
-        <ToggleButton value="finetuneHz">Finetune Hz</ToggleButton>
-      </ToggleButtonGroup>
+        {trackingModes.map(wave => (
+          <MenuItem key={wave.value} value={wave.value}>
+            {wave.label}
+          </MenuItem>
+        ))}
+      </Select>
     </div>
   );
 }
