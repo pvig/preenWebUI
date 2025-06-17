@@ -9,6 +9,8 @@ type OperatorKey = `op${OperatorNumber}`;
 interface Operator {
   freq: number; // 0-127
   fineTune: number; // 0-127
+  waveform: number;
+  keyboardTracking: number;
   env: AdsrState;
   enabled?: boolean; // Nouveau champ optionnel
 }
@@ -24,7 +26,7 @@ interface PatchState {
   currentPatch: Patch;
   operators: Record<OperatorKey, Operator>;
   selectedOperator: OperatorNumber;
-  
+
   // Actions
   pushPatch: () => void;
   pullPatch: (patch: Partial<Patch>) => void;
@@ -37,12 +39,12 @@ interface PatchState {
 const defaultPatch: Patch = {
   name: 'Init Patch',
   operators: {
-    op1: { freq: 64, env: initialAdsr, enabled: true },
-    op2: { freq: 64, env: initialAdsr, enabled: true },
-    op3: { freq: 64, env: initialAdsr, enabled: true },
-    op4: { freq: 64, env: initialAdsr, enabled: true },
-    op5: { freq: 64, env: initialAdsr, enabled: true },
-    op6: { freq: 64, env: initialAdsr, enabled: true }
+    op1: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
+    op2: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
+    op3: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
+    op4: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
+    op5: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
+    op6: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true }
   },
   algorithm: 1
 };

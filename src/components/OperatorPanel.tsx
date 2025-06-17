@@ -1,6 +1,9 @@
 import { usePatchStore } from '../stores/patchStore';
 import EnvelopeGraph from './EnvelopeGraph';
 import Knob from './Knob';
+import { WaveformSelector } from '../operator/WaveformSelector';
+import { FineTuneKnob } from '../operator/FineTuneKnob';
+import { KeyboardTrackingSelect } from '../operator/KeyboardTrackingSelect';
 
 interface OperatorPanelProps {
   opNumber: number; // 1 à 4
@@ -44,6 +47,21 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
         operatorNumber={opNumber}
       />
       
+      <FineTuneKnob
+        value={operator.fineTune}
+        onChange={(fineTune) => updateOperator(opNumber, { fineTune })}
+      />
+
+      <WaveformSelector
+        value={operator.waveform}
+        onChange={(waveform) => updateOperator(opNumber, { waveform })}
+      />
+
+      <KeyboardTrackingSelect
+        value={operator.keyboardTracking || 'fixed'}
+        onChange={(keyboardTracking) => updateOperator(opNumber, { keyboardTracking })}
+      />
+
       {/* Autres contrôles d'opérateur... */}
     </div>
   );
