@@ -1,6 +1,6 @@
 // FineTuneKnob.jsx
 import React, { useState } from "react";
-import Knob from "../components/knobs/KnobBase";
+import Knob from "../knobs/KnobBase";
 
 export function FineTuneKnob({
   min = -1,

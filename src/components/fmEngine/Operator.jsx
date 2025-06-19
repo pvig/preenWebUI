@@ -1,9 +1,9 @@
 import React from 'react';
 import useOperator from '../hooks/useOperator';
 import FineTuneControl from './operator/FineTuneControl';
-import WaveformSelector from './operator/WaveformSelector';
+import WaveformSelector from '../operator/WaveformSelector';
 import FollowModeSelector from './operator/FollowModeSelector';
-import AdsrControl from './operator/AdsrControl';
+import AdsrControl from '../operator/AdsrControl';
 import FrequencyControl from './operator/FrequencyControl';
 
 export default function Operator({ id }) {

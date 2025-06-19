@@ -1,8 +1,8 @@
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
-import { usePatchStore } from '../stores/patchStore';
+import { usePatchStore } from '../../stores/patchStore';
 
-import { type AdsrState, type CurveType } from '../types/adsr';
+import { type AdsrState, type CurveType } from '../../types/adsr';
 
 interface AdsrControlProps {
   operatorNumber: number;

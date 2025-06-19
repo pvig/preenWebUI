@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePatchStore } from '../stores/patchStore';
-import './MidiMenu.css';
+import '../assets/css/MidiMenu.css';
 
 export const MidiMenu = () => {
   const [midiAccess, setMidiAccess] = useState<WebMidi.MIDIAccess | null>(null);
