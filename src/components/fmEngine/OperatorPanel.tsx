@@ -1,10 +1,10 @@
 import React from "react";
 import { usePatchStore } from '../../stores/patchStore';
-import AdsrControl from '../operator/AdsrControl';
-import { WaveformSelector } from '../operator/WaveformSelector';
-import { FineTuneKnob } from '../operator/FineTuneKnob';
-import { FrequencyKnob } from '../operator/FrequencyKnob';
-import { KeyboardTrackingSelect } from '../operator/KeyboardTrackingSelect';
+import AdsrControl from './operator/AdsrControl';
+import { WaveformSelector } from './operator/WaveformSelector';
+import { FineTuneKnob } from './operator/FineTuneKnob';
+import { FrequencyKnob } from './operator/FrequencyKnob';
+import { KeyboardTrackingSelect } from './operator/KeyboardTrackingSelect';
 
 interface OperatorPanelProps {
   opNumber: number;
@@ -19,10 +19,6 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
   };
   const handleFineTuneChange = (newTuning: number) => {
     updateOperator(opNumber, { fineTune: newTuning });
-  };
-  const keyboardTrackingChange = (newMode: number) => {
-    console.log("newMode", newMode);
-    updateOperator(opNumber, { keyboardTracking: newMode });
   };
 
   return (

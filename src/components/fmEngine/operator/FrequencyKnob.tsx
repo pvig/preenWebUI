@@ -1,8 +1,8 @@
 // FineTuneKnob.jsx
 import React, { useState } from "react";
-import Knob from "../knobs/KnobBase";
+import Knob from "../../knobs/KnobBase";
 
-export function FineTuneKnob({
+export function FrequencyKnob({
   min = -1,
   max = 1,
   step = 0.01,
@@ -27,7 +27,6 @@ export function FineTuneKnob({
       value={value}
       onChange={setFineValue}
       label={label}
-      renderValue={(v) => v.toFixed(2)}
       color="#1E90FF"
       strokeColor="#aaa"
       backgroundColor="#f5faff"
@@ -36,4 +35,4 @@ export function FineTuneKnob({
   );
 }
 
-export default FineTuneKnob;
+export default FrequencyKnob;

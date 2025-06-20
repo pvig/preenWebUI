@@ -33,6 +33,9 @@ export const ImKnobControl: React.FC<{
         min={0}
         max={127}
         onChange={(val) => onChange('value', val)}
+        color="#1E90FF"
+        strokeColor="#aaa"
+        backgroundColor="#f5faff"
         size={50}
       />
       <Knob

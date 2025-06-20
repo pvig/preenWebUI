@@ -7,6 +7,8 @@ type OperatorNumber = 1 | 2 | 3 | 4 | 5 | 6;
 type OperatorKey = `op${OperatorNumber}`;
 
 interface Operator {
+  volume: number;
+  pan: number;
   freq: number; // 0-127
   fineTune: number; // 0-127
   waveform: number;
@@ -39,12 +41,12 @@ interface PatchState {
 const defaultPatch: Patch = {
   name: 'Init Patch',
   operators: {
-    op1: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
-    op2: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
-    op3: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
-    op4: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
-    op5: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
-    op6: { freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true }
+    op1: { volume: 100, pan: 0, freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
+    op2: { volume: 100, pan: 0, freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
+    op3: { volume: 100, pan: 0, freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
+    op4: { volume: 100, pan: 0, freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
+    op5: { volume: 100, pan: 0, freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true },
+    op6: { volume: 100, pan: 0, freq: 64, fineTune: 0, waveform: 0, keyboardTracking: 0, env: initialAdsr, enabled: true }
   },
   algorithm: 1
 };
@@ -133,5 +135,6 @@ export const usePatchStore = create<PatchState>((set, get) => ({
         }
       }
     }));
-  }
+  },
+
 }));

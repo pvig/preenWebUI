@@ -11,7 +11,7 @@ function KnobBase({
   backgroundColor = "#eee",
   strokeColor = "#ccc",
   renderLabel = (val) => val,
-  label = null, // <== Nouveau
+  label = null
 }) {
   const center = size / 2;
   const radius = knobRadius ?? (center - 10);
@@ -138,13 +138,14 @@ function KnobBase({
       <div
         style={{
           position: "absolute",
-          top: -8,
+          top: -12,
           left: 0,
           width: "100%",
           textAlign: "center",
           fontSize: 12,
           fontWeight: "bold",
           pointerEvents: "none",
+          color:"#888"
         }}
       >
         {label}

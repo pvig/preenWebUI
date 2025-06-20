@@ -3,9 +3,7 @@ import styled from 'styled-components';
 
 const VisualizationSVG = styled.svg`
   width: 100%;
-  height: 120px;
-  background: #1a202c;
-  border-radius: 6px;
+  height: 150px;
 `;
 
 interface AlgorithmVisualizationProps {
@@ -20,34 +18,34 @@ interface AlgorithmVisualizationProps {
 }
 
 export const AlgorithmVisualization: React.FC<AlgorithmVisualizationProps> = ({ algorithm }) => {
-  // Positionnement dynamique basé sur le nombre d'opérateurs
-  const getOperatorPosition = (opId: number) => {
-    const positions = algorithm.operatorCount === 4 
+  const getPosition = (opId: number) => {
+    // Positionnement spécifique pour correspondre au PreenFM
+    const positions = algorithm.operatorCount === 4
       ? [
-          { x: 50, y: 30 },  // OP1
-          { x: 20, y: 60 },  // OP2
-          { x: 80, y: 60 },  // OP3
-          { x: 50, y: 90 }   // OP4
+          { x: 50, y: 30 },  // OP1 (en haut)
+          { x: 25, y: 70 },  // OP2 (bas gauche)
+          { x: 75, y: 70 },  // OP3 (bas droit)
+          { x: 50, y: 90 }   // OP4 (tout en bas)
         ]
       : [
-          { x: 25, y: 20 },  // OP1
-          { x: 10, y: 50 },  // OP2
-          { x: 40, y: 50 },  // OP3
-          { x: 70, y: 20 },  // OP4
-          { x: 85, y: 50 },  // OP5
-          { x: 55, y: 80 }   // OP6
+          { x: 50, y: 20 },  // OP1 (en haut)
+          { x: 20, y: 50 },  // OP2 (milieu gauche)
+          { x: 50, y: 50 },  // OP3 (centre)
+          { x: 80, y: 50 },  // OP4 (milieu droit)
+          { x: 30, y: 80 },  // OP5 (bas gauche)
+          { x: 70, y: 80 }   // OP6 (bas droit)
         ];
-    
+
     return positions[opId - 1] || { x: 50, y: 50 };
   };
 
   return (
     <VisualizationSVG viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-      {/* Connexions entre opérateurs */}
-      {algorithm.ops.flatMap(op => 
+      {/* Connexions */}
+      {algorithm.ops.map(op => 
         op.modulators.map(modId => {
-          const from = getOperatorPosition(modId);
-          const to = getOperatorPosition(op.id);
+          const from = getPosition(modId);
+          const to = getPosition(op.id);
           return (
             <line
               key={`${modId}-${op.id}`}
@@ -56,16 +54,16 @@ export const AlgorithmVisualization: React.FC<AlgorithmVisualizationProps> = ({ 
               x2={to.x}
               y2={to.y}
               stroke="#4FD1C5"
-              strokeWidth="1.2"
-              strokeOpacity="0.8"
+              strokeWidth="1.5"
+              strokeOpacity="0.7"
             />
           );
         })
       )}
       
-      {/* Cercles des opérateurs */}
+      {/* Opérateurs */}
       {algorithm.ops.map(op => {
-        const pos = getOperatorPosition(op.id);
+        const pos = getPosition(op.id);
         return (
           <g key={op.id}>
             <circle
@@ -83,7 +81,6 @@ export const AlgorithmVisualization: React.FC<AlgorithmVisualizationProps> = ({ 
               fill="white"
               fontSize="6"
               fontWeight="bold"
-              pointerEvents="none"
             >
               {op.id}
             </text>

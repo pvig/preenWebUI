@@ -11,7 +11,7 @@ export function PatchEditor() {
 
   const Row = styled.div`
   display: flex;
-  height: 100vh;
+  height: auto;
   background: #1a202c;
 `;
 
