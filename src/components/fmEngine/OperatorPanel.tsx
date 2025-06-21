@@ -1,5 +1,5 @@
 import React from "react";
-import { usePatchStore } from '../../stores/patchStore';
+import { usePatchStore, type OperatorNumber } from '../../stores/patchStore';
 import AdsrControl from './operator/AdsrControl';
 import { WaveformSelector } from './operator/WaveformSelector';
 import { FineTuneKnob } from './operator/FineTuneKnob';
@@ -7,7 +7,7 @@ import { FrequencyKnob } from './operator/FrequencyKnob';
 import { KeyboardTrackingSelect } from './operator/KeyboardTrackingSelect';
 
 interface OperatorPanelProps {
-  opNumber: number;
+  opNumber: OperatorNumber;
 }
 
 export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {

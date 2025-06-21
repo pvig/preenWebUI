@@ -5,19 +5,19 @@ import { usePatchStore } from '../../../stores/patchStore';
 import { type AdsrState, type CurveType } from '../../../types/adsr';
 
 interface AdsrControlProps {
-  operatorNumber: number;
+  operatorNumber: OperatorNumber;
 }
 
 export function AdsrControl({ operatorNumber }: AdsrControlProps) {
   const { operators, updateAdsr } = usePatchStore();
   //console.log("operators", operatorNumber);
   const adsr = operators[`op${operatorNumber}` as keyof typeof operators].env;
-  
+
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragging, setDragging] = useState<string | null>(null);
-  const margin = { top: 20, right: 20, bottom: 30, left: 30 };
-  const width = 300 - margin.left - margin.right;
-  const height = 150 - margin.top - margin.bottom;
+  const margin = { top: 20, right: 20, bottom: 10, left: 30 };
+  const width = 250 - margin.left - margin.right;
+  const height = 120 - margin.top - margin.bottom;
 
   // Références pour les éléments D3
   const lineRef = useRef<d3.Selection<SVGPathElement, Point[], null, undefined> | null>(null);
@@ -130,7 +130,7 @@ export function AdsrControl({ operatorNumber }: AdsrControlProps) {
       .attr('class', 'grid')
       .call(d3.axisLeft(yScale).tickSize(-width).tickFormat(''))
       .selectAll('.tick line')
-      .attr('stroke', '#E2E8F0')
+      .attr('stroke', '#666')
       .attr('stroke-dasharray', '2,2');
 
     g.append('g')
@@ -138,7 +138,7 @@ export function AdsrControl({ operatorNumber }: AdsrControlProps) {
       .attr('transform', `translate(0,${height})`)
       .call(d3.axisBottom(xScale).tickSize(-height).tickFormat(''))
       .selectAll('.tick line')
-      .attr('stroke', '#E2E8F0')
+      .attr('stroke', '#666')
       .attr('stroke-dasharray', '2,2');
 
     const lineGenerator = d3.line<Point>()
@@ -232,7 +232,7 @@ export function AdsrControl({ operatorNumber }: AdsrControlProps) {
 
   return (
     <div>
-      <svg ref={svgRef} className="w-full h-full" />
+      <svg ref={svgRef} className="adsr w-full h-full" />
       {dragging && (
         <div className="tooltip">
           Editing: {dragging} |

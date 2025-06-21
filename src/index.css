@@ -1,6 +1,6 @@
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  line-height: 1.1;
   font-weight: 400;
 
 
@@ -51,7 +51,7 @@ button:focus-visible {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
+    color: #fff;
     background-color: #ffffff;
   }
   a:hover {
@@ -63,10 +63,13 @@ button:focus-visible {
 }
 
 .operator-panel {
-  background-color: #f8f8f8;
-  padding: 0.5em;
+  background-color: #2d3748;
+  padding: 0;
 }
-
+.adsr {
+  background: #1d1d1d;
+  margin-top: 10px;
+}
 .envelope-editor {
   position: relative;
   background: #1e1e2e;
@@ -182,4 +185,10 @@ button {
 .no-modulation {
   color: #999;
   text-align: center;
+}
+.operator-control .MuiSelect-select * {
+  color: white;
+}
+.MuiSelect-select.MuiSelect-standard.MuiInputBase-input.MuiInput-input.MuiInputBase-inputSizeSmall {
+  color: white;
 }

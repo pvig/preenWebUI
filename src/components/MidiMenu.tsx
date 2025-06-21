@@ -8,7 +8,7 @@ export const MidiMenu = () => {
   const [outputs, setOutputs] = useState<WebMidi.MIDIOutput[]>([]);
   const [selectedInput, setSelectedInput] = useState<string>('');
   const [selectedOutput, setSelectedOutput] = useState<string>('');
-  const { pushPatch, pullPatch, currentPatch } = usePatchStore();
+  const { pushPatch, pullPatch } = usePatchStore();
 
   // Initialisation MIDI
   useEffect(() => {
