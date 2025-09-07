@@ -1,5 +1,5 @@
 import React from 'react';
-import { useFMSynth } from './FMSynthContext';
+//import { useFMSynth } from '../FMSynthContext';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -22,37 +22,10 @@ const Label = styled.div`
 `;
 
 export const ModulationIndexes: React.FC = () => {
-  const { imValues, updateImValue } = useFMSynth();
 
   return (
     <Container>
-      {Object.entries(imValues).map(([key, value]) => (
-        <KnobContainer key={key}>
-          <Label>{key}</Label>
-          <input
-            type="range"
-            min="0"
-            max="127"
-            value={value.value}
-            onChange={(e) => updateImValue(
-              parseInt(key.replace('IM', '')),
-              'value',
-              parseInt(e.target.value)
-            )}
-          />
-          <input
-            type="range"
-            min="-64"
-            max="63"
-            value={value.veloSens}
-            onChange={(e) => updateImValue(
-              parseInt(key.replace('IM', '')),
-              'veloSens',
-              parseInt(e.target.value)
-            )}
-          />
-        </KnobContainer>
-      ))}
+
     </Container>
   );
 };

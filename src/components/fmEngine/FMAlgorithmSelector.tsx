@@ -1,12 +1,12 @@
-import React from 'react';
-import { useFMSynth } from './FMSynthContext';
 import styled from 'styled-components';
 import { AlgorithmVisualization } from './AlgorithmVisualization';
+import { DEFAULT_ALGORITHMS } from '../../types/patch';
+import { useCurrentPatch, selectAlgorithm } from '../../stores/patchStore';
 
 const SelectorContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
   padding: 20px;
   background: #2d3748;
   border-radius: 8px;
@@ -21,6 +21,7 @@ const NavigationControls = styled.div`
 const NavButton = styled.button`
   width: 40px;
   height: 40px;
+  margin:0 20px;
   border-radius: 50%;
   background: #4a5568;
   color: white;
@@ -42,27 +43,12 @@ const NavButton = styled.button`
   }
 `;
 
-const AlgorithmInfo = styled.div`
-  text-align: center;
-`;
-
-const AlgorithmName = styled.h3`
-  margin: 0;
-  color: #e2e8f0;
-  font-size: 1.3rem;
-`;
-
-const AlgorithmDetails = styled.div`
-  color: #a0aec0;
-  font-size: 0.9rem;
-`;
-
 const VisualizationWrapper = styled.div`
   background: #1a202c;
   border-radius: 8px;
   padding: 15px;
   position: relative;
-  min-height: 200px;
+  min-height: 120px;
 `;
 
 const CarriersIndicator = styled.div`
@@ -88,37 +74,55 @@ const CarrierBadge = styled.div`
 `;
 
 export const FMAlgorithmSelector = () => {
-  const {
-    algorithms,
-    currentAlgorithm,
-    setCurrentAlgorithm
-  } = useFMSynth();
 
-  const currentIndex = algorithms.findIndex(a => a.id === currentAlgorithm.id);
-  const carriers = currentAlgorithm.ops.filter(op => op.type === 'carrier');
+  const currentPatch = useCurrentPatch();
+  const currentAlgorithm = currentPatch?.algorithm;
+  if(!currentAlgorithm) {
+    return;
+  }
+
+  const currentIndex = DEFAULT_ALGORITHMS.findIndex(a => a.id === currentAlgorithm.id);
+  const carriers = currentAlgorithm.ops.filter(op => op.type === 'CARRIER');
 
   const handlePrevious = () => {
-    const newIndex = (currentIndex - 1 + algorithms.length) % algorithms.length;
-    setCurrentAlgorithm(algorithms[newIndex]);
+    const newIndex = (currentIndex - 1 + DEFAULT_ALGORITHMS.length) % DEFAULT_ALGORITHMS.length;
+    selectAlgorithm(DEFAULT_ALGORITHMS[newIndex]);
   };
 
   const handleNext = () => {
-    const newIndex = (currentIndex + 1) % algorithms.length;
-    setCurrentAlgorithm(algorithms[newIndex]);
+    const newIndex = (currentIndex + 1) % DEFAULT_ALGORITHMS.length;
+    selectAlgorithm(DEFAULT_ALGORITHMS[newIndex]);
   };
 
   return (
     <SelectorContainer>
-      <AlgorithmInfo>
-        <AlgorithmName>{currentAlgorithm.name}</AlgorithmName>
-        <AlgorithmDetails>
-          {currentAlgorithm.operatorCount} Operators • Algorithm {currentIndex + 1}/{algorithms.length}
-        </AlgorithmDetails>
-      </AlgorithmInfo>
+
+      <NavigationControls>
+        <NavButton
+          onClick={handlePrevious}
+          disabled={currentIndex === 0}
+          aria-label="Previous algorithm"
+        >
+          ←
+        </NavButton>
+
+        <div style={{ flexGrow: 1, textAlign: 'center' }}>
+          {/* Pourrait ajouter un sélecteur déroulant ici */}
+          {currentAlgorithm.name}
+        </div>
+
+        <NavButton
+          onClick={handleNext}
+          disabled={currentIndex === DEFAULT_ALGORITHMS.length - 1}
+          aria-label="Next algorithm"
+        >
+          →
+        </NavButton>
+      </NavigationControls>
 
       <VisualizationWrapper>
         <AlgorithmVisualization algorithm={currentAlgorithm} />
-        
+
         <CarriersIndicator>
           {carriers.map(op => (
             <CarrierBadge key={`carrier-badge-${op.id}`}>
@@ -128,27 +132,6 @@ export const FMAlgorithmSelector = () => {
         </CarriersIndicator>
       </VisualizationWrapper>
 
-      <NavigationControls>
-        <NavButton 
-          onClick={handlePrevious}
-          disabled={currentIndex === 0}
-          aria-label="Previous algorithm"
-        >
-          ←
-        </NavButton>
-        
-        <div style={{ flexGrow: 1, textAlign: 'center' }}>
-          {/* Pourrait ajouter un sélecteur déroulant ici */}
-        </div>
-        
-        <NavButton 
-          onClick={handleNext}
-          disabled={currentIndex === algorithms.length - 1}
-          aria-label="Next algorithm"
-        >
-          →
-        </NavButton>
-      </NavigationControls>
     </SelectorContainer>
   );
 };

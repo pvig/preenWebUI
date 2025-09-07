@@ -14,6 +14,7 @@ export interface AdsrPoint {
     curves?: {
       attack: CurveType;
       decay: CurveType;
+      sustain: CurveType;
       release: CurveType;
     };
   }
@@ -26,6 +27,7 @@ export interface AdsrPoint {
     curves: {
       attack: 'logarithmic',
       decay: 'logarithmic',
+      sustain:'linear',
       release: 'logarithmic'
     }
   };

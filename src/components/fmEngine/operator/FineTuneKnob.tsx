@@ -1,22 +1,27 @@
 // FineTuneKnob.jsx
-import React, { useState } from "react";
 import Knob from "../../knobs/KnobBase";
 
-export function FineTuneKnob({
+interface FineTuneKnobProps {
+  min?: number;
+  max?: number;
+  step?: number;
+  value: number; // <-- contrôlé par le parent
+  label?: string;
+  onChange: (v: number) => void;
+}
+
+export const FineTuneKnob: React.FC<FineTuneKnobProps> = ({
   min = -1,
   max = 1,
   step = 0.01,
-  initial = 0,
-  label ="",
+  value,
+  label = "",
   onChange,
   ...props
-}) {
-  const [value, setValue] = useState(initial);
-
-  const setFineValue = (v) => {
+}) => {
+  const setFineValue = (v: number) => {
     const rounded = Math.round(v / step) * step;
-    setValue(parseFloat(rounded.toFixed(4))); // 4 décimales max
-    onChange(rounded);
+    onChange(parseFloat(rounded.toFixed(4))); // 4 décimales max
   };
 
   return (
@@ -27,13 +32,13 @@ export function FineTuneKnob({
       value={value}
       onChange={setFineValue}
       label={label}
-      renderValue={(v) => v.toFixed(2)}
+      renderValue={(v: number) => v.toFixed(2)}
       color="#1E90FF"
       strokeColor="#aaa"
       backgroundColor="#f5faff"
       size={60}
     />
   );
-}
+};
 
 export default FineTuneKnob;

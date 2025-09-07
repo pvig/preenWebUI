@@ -2,15 +2,15 @@ import React, { useRef } from "react";
 
 function KnobBase({
   size = 100,
-  knobRadius,
+  knobRadius = 20,
   min = 0,
   max = 100,
-  value,
-  onChange,
+  value = 0,
+  onChange = (arg) => { console.log("arg", arg)},
   color = "#000",
   backgroundColor = "#eee",
   strokeColor = "#ccc",
-  renderLabel = (val) => val,
+  renderLabel = (val: number) => val,
   label = null
 }) {
   const center = size / 2;
@@ -23,20 +23,22 @@ function KnobBase({
   const END_ANGLE = 135;
   const ANGLE_RANGE = END_ANGLE - START_ANGLE;
 
-  value = value.toFixed(2);
+  //value = value?.toFixed(2);
 
-  const angleForValue = (val) => {
+  const angleForValue = (val:number) => {
     const ratio = (val - min) / (max - min);
     return START_ANGLE + ratio * ANGLE_RANGE;
   };
 
-  const valueForAngle = (angle) => {
+  const valueForAngle = (angle:number) => {
     const clamped = Math.max(START_ANGLE, Math.min(END_ANGLE, angle));
     const ratio = (clamped - START_ANGLE) / ANGLE_RANGE;
     return min + ratio * (max - min);
   };
 
   const getAngleFromEvent = (e) => {
+    if (!svgRef.current) return 0;
+
     const rect = svgRef.current.getBoundingClientRect();
     const x = e.clientX - (rect.left + center);
     const y = e.clientY - (rect.top + center);
@@ -47,13 +49,16 @@ function KnobBase({
     return angle;
   };
 
-  const updateFromEvent = (e) => {
+  const updateFromEvent = (e: PointerEvent) => {
+    if (!svgRef.current) return; 
     const angle = getAngleFromEvent(e);
     const clampedAngle = Math.max(START_ANGLE, Math.min(END_ANGLE, angle));
     onChange(valueForAngle(clampedAngle));
   };
 
   const handlePointerDown = (e) => {
+    if (!svgRef.current) return 0;
+
     e.preventDefault();
     isDragging.current = true;
     updateFromEvent(e);
@@ -62,7 +67,7 @@ function KnobBase({
   };
 
   const handlePointerMove = (e) => {
-    if (!isDragging.current) return;
+    if (!svgRef.current || !isDragging.current) return;
     updateFromEvent(e);
   };
 
@@ -88,86 +93,94 @@ function KnobBase({
 
   const tickMin = getTick(START_ANGLE);
   const tickMax = getTick(END_ANGLE);
+  
+  React.useEffect(() => {
+    return () => {
+      // Nettoyage au démontage
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, []);
 
   return (
-  <div
-    style={{
-      position: "relative",
-      width: size,
-      height: size,
-    }}
-  >
-    {/* SVG du knob */}
-    <svg
-      ref={svgRef}
-      width={size}
-      height={size}
-      onPointerDown={handlePointerDown}
-      style={{ userSelect: "none", cursor: "pointer" }}
+    <div
+      style={{
+        position: "relative",
+        width: size,
+        height: size,
+      }}
     >
-      <circle
-        cx={center}
-        cy={center}
-        r={radius * 1.2}
-        fill="transparent"
+      {/* SVG du knob */}
+      <svg
+        ref={svgRef}
+        width={size}
+        height={size}
         onPointerDown={handlePointerDown}
-      />
-      <circle
-        cx={center}
-        cy={center}
-        r={radius}
-        fill={backgroundColor}
-        stroke={strokeColor}
-        strokeWidth="2"
-      />
-      <line {...tickMin} stroke="#888" strokeWidth="2" />
-      <line {...tickMax} stroke="#888" strokeWidth="2" />
-      <line
-        x1={center}
-        y1={center}
-        x2={pointerX}
-        y2={pointerY}
-        stroke={color}
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-    </svg>
+        style={{ userSelect: "none", cursor: "pointer" }}
+      >
+        <circle
+          cx={center}
+          cy={center}
+          r={radius * 1.2}
+          fill="transparent"
+          onPointerDown={handlePointerDown}
+        />
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill={backgroundColor}
+          stroke={strokeColor}
+          strokeWidth="2"
+        />
+        <line {...tickMin} stroke="#888" strokeWidth="2" />
+        <line {...tickMax} stroke="#888" strokeWidth="2" />
+        <line
+          x1={center}
+          y1={center}
+          x2={pointerX}
+          y2={pointerY}
+          stroke={color}
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+      </svg>
 
-    {/* Label au-dessus */}
-    {label && (
+      {/* Label au-dessus */}
+      {label && (
+        <div
+          style={{
+            position: "absolute",
+            top: -12,
+            left: 0,
+            width: "100%",
+            textAlign: "center",
+            fontSize: 12,
+            fontWeight: "bold",
+            pointerEvents: "none",
+            color: "#888"
+          }}
+        >
+          {label}
+        </div>
+      )}
+
+      {/* Valeur en dessous */}
       <div
         style={{
           position: "absolute",
-          top: -12,
+          bottom: -8,
           left: 0,
           width: "100%",
           textAlign: "center",
           fontSize: 12,
-          fontWeight: "bold",
+          color: color,
           pointerEvents: "none",
-          color:"#888"
         }}
       >
-        {label}
+        {renderLabel(value)}
       </div>
-    )}
-
-    {/* Valeur en dessous */}
-    <div
-      style={{
-        position: "absolute",
-        bottom: -8,
-        left: 0,
-        width: "100%",
-        textAlign: "center",
-        fontSize: 12,
-        color: color,
-        pointerEvents: "none",
-      }}
-    >
-      {renderLabel(value)}
     </div>
-  </div>
 
   );
 }

@@ -4,10 +4,15 @@ import { FMSynthProvider } from '../components/fmEngine/FMSynthContext';
 import { FMAlgorithmSelector } from '../components/fmEngine/FMAlgorithmSelector';
 import { ModulationIndexes } from '../components/fmEngine/ModulationIndexes';
 import CarrierControls from '../components/fmEngine/CarrierControls';
+import { useCurrentPatch } from '../stores/patchStore';
 
 export function PatchEditor() {
 
-  const operators = [1, 2, 3, 4, 5, 6];
+  const currentPatch = useCurrentPatch();
+
+  if(!currentPatch) {
+    return;
+  }
 
   const Row = styled.div`
   display: flex;
@@ -15,38 +20,31 @@ export function PatchEditor() {
   background: #1a202c;
 `;
 
-  const Panel = styled.div`
-  width: 50%;
-  padding: 20px;
-  overflow-y: auto;
-`;
-
   const OperatorGrid = styled.div`
   display:flex;
   flex-wrap: wrap;
 `;
 
+console.log("operators", currentPatch.operators);
+
   return (
-<div className="editor-container">
-  <FMSynthProvider>
-    <Row>
-      <FMAlgorithmSelector />
-      <ModulationIndexes />
-    </Row>
+    <div className="editor-container">
+      <FMSynthProvider patch={currentPatch}>
+        <Row>
+          <FMAlgorithmSelector />
+          <ModulationIndexes />
+        </Row>
 
-    <CarrierControls />
+        <CarrierControls />
 
-    <Row>
-      <OperatorGrid>
-        {operators.map((op) => (
-          <OperatorPanel
-            key={`operator-${op}`}
-            opNumber={op}
-          />
-        ))}
-      </OperatorGrid>
-    </Row>
-  </FMSynthProvider>
-</div>
+        <Row>
+          <OperatorGrid>
+            {currentPatch.operators.map((op) => (
+              <OperatorPanel opNumber={op.id} key={op.id} />
+            ))}
+          </OperatorGrid>
+        </Row>
+      </FMSynthProvider>
+    </div>
   );
 }

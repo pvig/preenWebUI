@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { usePatchStore } from '../stores/patchStore';
 import '../assets/css/MidiMenu.css';
 
 export const MidiMenu = () => {
@@ -8,7 +7,6 @@ export const MidiMenu = () => {
   const [outputs, setOutputs] = useState<WebMidi.MIDIOutput[]>([]);
   const [selectedInput, setSelectedInput] = useState<string>('');
   const [selectedOutput, setSelectedOutput] = useState<string>('');
-  const { pushPatch, pullPatch } = usePatchStore();
 
   // Initialisation MIDI
   useEffect(() => {
@@ -46,8 +44,6 @@ export const MidiMenu = () => {
     const output = outputs.find(out => out.id === selectedOutput);
     if (!output) return;
 
-    pushPatch();
-
     console.log('Patch envoyé au PreenFM3');
   };
 
@@ -61,7 +57,7 @@ export const MidiMenu = () => {
     input.onmidimessage = (message) => {
       if (isSysexPatch(message.data)) {
         const patch = convertSysexToPatch(message.data);
-        pullPatch(patch); // Met à jour le store
+        //loadPatch(patch); // Met à jour le store
       }
     };
   };

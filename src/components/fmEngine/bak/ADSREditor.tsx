@@ -1,18 +1,18 @@
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
-import { useOperatorEnvelope, usePatchStore, updateADSR } from '../../../stores/patchStore';
+import { useOperatorEnvelope, usePatchStore } from '../../../stores/patchStore';
 import { type AdsrState, type CurveType } from '../../../types/adsr';
 
 interface AdsrControlProps {
   operatorId: number;
 }
 
-const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
-  //Console.log("AdsrControl", operatorId);
+const ADSREditor: React.FC<AdsrControlProps> = ({ operatorId }) => {
+  //console.log("AdsrControl", operatorId);
   const envelope = useOperatorEnvelope(operatorId);
   //console.log("envelope", envelope);
 
-  const selectedOperator = usePatchStore();
+  const patchStore = usePatchStore();
 
   if (!envelope) return null;
 
@@ -203,33 +203,17 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
         if (key === 'sustain') updates.sustain = { time: constrainedX, level: constrainedY };
         if (key === 'release') updates.release = { time: constrainedX, level: constrainedY };
 
-
+        // Notification du changement
+        requestAnimationFrame(() => {
+          console.log("updates", updates);
+          patchStore.updateADSR(operatorId, updates);
+        });
       })
       .on('end', function () {
         setDragging(null);
         dragOffset.current = null;
         const key = d3.select(this).attr('data-key');
         d3.select(this).attr('fill', pointColors[key as keyof typeof pointColors]);
-
-
-        const updates: Partial<AdsrState> = {};
-        if (key === 'attack') {
-          updates.attack = { time: currentPoints.current[1].x, level: currentPoints.current[1].y };
-        }
-        if (key === 'decay') {
-          updates.decay = { time: currentPoints.current[2].x, level: currentPoints.current[2].y };
-        }
-        if (key === 'sustain') {
-          updates.sustain = { time: currentPoints.current[3].x, level: currentPoints.current[3].y };
-        }
-        if (key === 'release') {
-          updates.release = { time: currentPoints.current[4].x, level: currentPoints.current[4].y };
-        }
-        
-        // Notification du changement
-        requestAnimationFrame(() => {
-          updateADSR(operatorId, updates);
-        });
       });
 
     // Création des points interactifs
@@ -272,4 +256,4 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
   );
 }
 
-export default React.memo(AdsrControl);
+export default React.memo(ADSREditor);
