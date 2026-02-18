@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { AlgorithmVisualization } from './AlgorithmVisualization';
+import ModulationIndexesEditor from './ModulationIndexesEditor';
 import { DEFAULT_ALGORITHMS } from '../../types/patch';
 import { useCurrentPatch, selectAlgorithm } from '../../stores/patchStore';
 
@@ -48,7 +49,19 @@ const VisualizationWrapper = styled.div`
   border-radius: 8px;
   padding: 15px;
   position: relative;
-  min-height: 120px;
+  min-height: 220px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+`;
+
+const VisualizationContainer = styled.div`
+  flex: 1;
+  background: #1a202c;
+  border-radius: 8px;
+  padding: 15px;
+  position: relative;
+  min-height: 220px;
 `;
 
 const CarriersIndicator = styled.div`
@@ -121,7 +134,10 @@ export const FMAlgorithmSelector = () => {
       </NavigationControls>
 
       <VisualizationWrapper>
-        <AlgorithmVisualization algorithm={currentAlgorithm} />
+        <VisualizationContainer>
+          <AlgorithmVisualization algorithm={currentAlgorithm} />
+        </VisualizationContainer>
+        <ModulationIndexesEditor algorithm={currentAlgorithm} />
       </VisualizationWrapper>
 
     </SelectorContainer>

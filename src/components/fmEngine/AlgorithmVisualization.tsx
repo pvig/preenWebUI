@@ -4,7 +4,7 @@ import { Algorithm } from '../../types/patch';
 
 const VisualizationSVG = styled.svg`
   width: 100%;
-  height: 100px;
+  height: 200px;
 `;
 
  export const AlgorithmVisualization: React.FC<{ algorithm: Algorithm }> = ({ algorithm }) => {
@@ -79,24 +79,46 @@ const VisualizationSVG = styled.svg`
       {/* Debug: affiche la liste des opérateurs reçus */}
       <text x="5" y="10" fontSize="5" fill="#2D3748">{debugText}</text>
       {/* Draw connections: relie uniquement les positions des opérateurs existants */}
-      {algorithm.ops?.flatMap(op =>
+      {algorithm.ops?.flatMap((op, opIndex) =>
         op.target
-          .filter(targetId => algorithm.ops.some(o => o.id === targetId))
-          .map(targetId => {
+          .filter(targetLink => algorithm.ops.some(o => o.id === targetLink.id))
+          .map((targetLink, targetIndex) => {
+            // Calculer l'index global de la liaison pour générer le label IM
+            let imIndex = 1;
+            for (let i = 0; i < opIndex; i++) {
+              imIndex += algorithm.ops[i].target.filter(tl => algorithm.ops.some(o => o.id === tl.id)).length;
+            }
+            imIndex += targetIndex + 1;
+            
             const from = getPosition(op.id);
-            const to = getPosition(targetId);
+            const to = getPosition(targetLink.id);
+            const midX = (from.x + to.x) / 2;
+            const midY = (from.y + to.y) / 2;
+            
             return (
-              <line
-                key={`conn-${op.id}-${targetId}`}
-                x1={from.x}
-                y1={from.y}
-                x2={to.x}
-                y2={to.y}
-                stroke="#4FD1C5"
-                strokeWidth="2"
-                strokeOpacity="0.7"
-                markerEnd="url(#arrowhead)"
-              />
+              <g key={`conn-${op.id}-${targetLink.id}`}>
+                <line
+                  x1={from.x}
+                  y1={from.y}
+                  x2={to.x}
+                  y2={to.y}
+                  stroke="#4FD1C5"
+                  strokeWidth="2"
+                  strokeOpacity="0.7"
+                  markerEnd="url(#arrowhead)"
+                />
+                {/* Affiche le label IM près du milieu de la liaison */}
+                <text
+                  x={midX}
+                  y={midY - 2}
+                  textAnchor="middle"
+                  fill="#4FD1C5"
+                  fontSize="6"
+                  fontWeight="bold"
+                >
+                  IM{imIndex}
+                </text>
+              </g>
             );
           })
       )}

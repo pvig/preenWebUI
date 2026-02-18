@@ -8,6 +8,11 @@ export interface ModulationTarget {
   amount: number; // -1.0 à 1.0
 }
 
+export interface ModulationLink {
+  id: number;      // ID de l'opérateur cible
+  im: number;      // Index de Modulation (0-100)
+}
+
 export interface LFO {
   shape: WaveformType;
   frequency: number;
@@ -32,7 +37,7 @@ export interface Operator {
   amplitude: number;      // 0.0 à 1.0
   pan: number;           // -1.0 (gauche) à 1.0 (droite)
   type: 'CARRIER' | 'MODULATOR'
-  target: number[];
+  target: ModulationLink[];
 
   // Enveloppe ADSR
   adsr: AdsrState;
@@ -219,7 +224,7 @@ export const DEFAULT_ALGORITHMS: Algorithm[] = [
     name: "1 Carrier, 1 Modulator",
     ops: [
       createOperator(1, "CARRIER"),
-      createOperator(2, "MODULATOR", { target: [1] }),
+      createOperator(2, "MODULATOR", { target: [{ id: 1, im: 0 }] }),
     ],
   },
   {
@@ -235,8 +240,8 @@ export const DEFAULT_ALGORITHMS: Algorithm[] = [
     name: "2 Modulators en série vers 1 Carrier",
     ops: [
       createOperator(1, "CARRIER"),
-      createOperator(2, "MODULATOR", { target: [1] }),
-      createOperator(3, "MODULATOR", { target: [2] })
+      createOperator(2, "MODULATOR", { target: [{ id: 1, im: 0 }] }),
+      createOperator(3, "MODULATOR", { target: [{ id: 2, im: 0 }] })
     ],
   },
   {
@@ -244,7 +249,7 @@ export const DEFAULT_ALGORITHMS: Algorithm[] = [
     name: "1 Modulator vers 2 Carriers",
     ops: [
       createOperator(1, "CARRIER"),
-      createOperator(2, "MODULATOR", { target: [1, 3] }),
+      createOperator(2, "MODULATOR", { target: [{ id: 1, im: 0 }, { id: 3, im: 0 }] }),
       createOperator(3, "CARRIER")
     ],
   },
@@ -253,11 +258,11 @@ export const DEFAULT_ALGORITHMS: Algorithm[] = [
     name: "4 Modulator, 2 Carriers",
     ops: [
       createOperator(1, "CARRIER"),
-      createOperator(2, "MODULATOR", { target: [1, 3] }),
+      createOperator(2, "MODULATOR", { target: [{ id: 1, im: 0 }, { id: 3, im: 0 }] }),
       createOperator(3, "CARRIER"),
-      createOperator(4, "MODULATOR", { target: [3] }),
-      createOperator(5, "MODULATOR", { target: [4] }),
-      createOperator(6, "MODULATOR", { target: [3] }),
+      createOperator(4, "MODULATOR", { target: [{ id: 3, im: 0 }] }),
+      createOperator(5, "MODULATOR", { target: [{ id: 4, im: 0 }] }),
+      createOperator(6, "MODULATOR", { target: [{ id: 3, im: 0 }] }),
     ],
   }
 ];

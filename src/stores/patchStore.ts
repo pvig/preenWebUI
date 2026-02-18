@@ -165,16 +165,22 @@ export const usePatchStore = create<PatchStore>()(
         const previousOperators = state.currentPatch.operators;
 
         // Recrée la liste des opérateurs en se basant sur l'algo,
-        // tout en conservant les paramètres existants lorsque l'ID est le même.
+        // tout en conservant les paramètres existants et les IMs.
         const newOperators: Operator[] = algorithm.ops.map((algoOp) => {
           const existing = previousOperators.find(op => op.id === algoOp.id);
+
+          // Fusionner les liaisons : préserver les IMs existants si la liaison existe déjà
+          const mergedTarget = algoOp.target.map(newLink => {
+            const existingLink = existing?.target.find(link => link.id === newLink.id);
+            return existingLink ? { ...newLink, im: existingLink.im } : newLink;
+          });
 
           if (existing) {
             return {
               ...existing,
               id: algoOp.id,
               type: algoOp.type,
-              target: [...algoOp.target],
+              target: mergedTarget,
             };
           }
 
@@ -182,7 +188,7 @@ export const usePatchStore = create<PatchStore>()(
             ...DEFAULT_OPERATOR,
             id: algoOp.id,
             type: algoOp.type,
-            target: [...algoOp.target],
+            target: mergedTarget,
           };
         });
 
@@ -259,9 +265,9 @@ export const usePatchStore = create<PatchStore>()(
         const sourceOsc = state.currentPatch.operators.find(osc => osc.id === sourceId);
         if (sourceOsc && sourceId !== targetId) {
           // Vérifier si la modulation existe déjà
-          const existingMod = sourceOsc.target.find(mod => mod === targetId);
+          const existingMod = sourceOsc.target.find(mod => mod.id === targetId);
           if (!existingMod) {
-            sourceOsc.target.push(targetId);
+            sourceOsc.target.push({ id: targetId, im: amount });
             state.isModified = true;
             state.currentPatch.editorMetadata!.lastModified = new Date();
           }
@@ -273,7 +279,7 @@ export const usePatchStore = create<PatchStore>()(
         const sourceOsc = state.currentPatch.operators.find(osc => osc.id === sourceId);
         if (sourceOsc) {
           sourceOsc.target = sourceOsc.target.filter(
-            mod => mod !== targetId
+            mod => mod.id !== targetId
           );
           state.isModified = true;
           state.currentPatch.editorMetadata!.lastModified = new Date();
@@ -284,9 +290,9 @@ export const usePatchStore = create<PatchStore>()(
       set((state) => {
         const sourceOsc = state.currentPatch.operators.find(osc => osc.id === sourceId);
         if (sourceOsc) {
-          const modulation = sourceOsc.target.find(mod => mod === targetId);
+          const modulation = sourceOsc.target.find(mod => mod.id === targetId);
           if (modulation) {
-            //modulation.amount = amount;
+            modulation.im = Math.max(0, Math.min(100, amount));
             state.isModified = true;
             state.currentPatch.editorMetadata!.lastModified = new Date();
           }
@@ -431,6 +437,9 @@ export const useOperatorEnvelope = (operatorId: number) => usePatchStore(state =
 });
 export const updateADSR = (operatorId: number, envelope: Partial<AdsrState>) =>
   usePatchStore.getState().updateADSR(operatorId, envelope);
+
+export const updateModulationAmount = (sourceId: number, targetId: number, amount: number) =>
+  usePatchStore.getState().updateModulationAmount(sourceId, targetId, amount);
 
 export const useIsModified = () => usePatchStore(state => state.isModified);
 export const useActiveTab = () => usePatchStore(state => state.ui.activeTab);
