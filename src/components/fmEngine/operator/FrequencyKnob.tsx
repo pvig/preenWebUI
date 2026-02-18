@@ -1,22 +1,28 @@
 // FineTuneKnob.jsx
-import React, { useState } from "react";
+import React from "react";
 import Knob from "../../knobs/KnobBase";
 
-export function FrequencyKnob({
+interface FrequencyKnobProps {
+  min?: number;
+  max?: number;
+  step?: number;
+  value: number;
+  label?: string;
+  onChange: (v: number) => void;
+}
+
+export const FrequencyKnob: React.FC<FrequencyKnobProps> = ({
   min = -1,
   max = 1,
   step = 0.01,
-  initial = 0,
-  label ="",
+  value,
+  label = "",
   onChange,
   ...props
-}) {
-  const [value, setValue] = useState(initial);
-
-  const setFineValue = (v) => {
+}) => {
+  const setFineValue = (v: number) => {
     const rounded = Math.round(v / step) * step;
-    setValue(parseFloat(rounded.toFixed(4))); // 4 décimales max
-    onChange(rounded);
+    onChange(parseFloat(rounded.toFixed(4))); // 4 décimales max
   };
 
   return (
@@ -33,6 +39,6 @@ export function FrequencyKnob({
       size={60}
     />
   );
-}
+};
 
 export default FrequencyKnob;

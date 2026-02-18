@@ -30,8 +30,9 @@ const createDefaultPatch = (): Patch => ({
   tags: [],
   algorithm: DEFAULT_ALGORITHMS[DEFAULT_ALGO_ID],
 
+  // On aligne les IDs des opérateurs du patch sur ceux de l'algorithme
   operators: Array.from({ length: DEFAULT_ALGORITHMS[DEFAULT_ALGO_ID].ops.length }, (_, i) => ({
-    id: i,
+    id: i + 1, // IDs 1..N comme dans DEFAULT_ALGORITHMS.ops
     ...DEFAULT_OPERATOR,
     enabled: i === 0, // Seul le premier oscillateur est activé par défaut
     frequency: i === 0 ? 8 : 8 * (i + 1) // Fréquences harmoniques
@@ -94,7 +95,7 @@ const createDefaultPatch = (): Patch => ({
 // État initial
 const initialState: EditorState = {
   currentPatch: createDefaultPatch(),
-  selectedOperator: 0,
+  selectedOperator: 1,
   selectedParameter: null,
   isModified: false,
   clipboard: null,
@@ -158,10 +159,44 @@ export const usePatchStore = create<PatchStore>()(
   immer((set, get) => ({
     ...initialState,
 
-    // Actions pour les oscillateurs
+    // Changer d'algorithme et réaligner la structure des opérateurs
     selectAlgorithm: (algorithm: Algorithm) =>
       set((state) => {
+        const previousOperators = state.currentPatch.operators;
+
+        // Recrée la liste des opérateurs en se basant sur l'algo,
+        // tout en conservant les paramètres existants lorsque l'ID est le même.
+        const newOperators: Operator[] = algorithm.ops.map((algoOp) => {
+          const existing = previousOperators.find(op => op.id === algoOp.id);
+
+          if (existing) {
+            return {
+              ...existing,
+              id: algoOp.id,
+              type: algoOp.type,
+              modulators: [...algoOp.modulators],
+            };
+          }
+
+          return {
+            ...DEFAULT_OPERATOR,
+            id: algoOp.id,
+            type: algoOp.type,
+            modulators: [...algoOp.modulators],
+          };
+        });
+
         state.currentPatch.algorithm = algorithm;
+        state.currentPatch.operators = newOperators;
+
+        // S'assurer que l'opérateur sélectionné existe encore
+        const maxId = algorithm.ops.length > 0
+          ? Math.max(...algorithm.ops.map(o => o.id))
+          : 1;
+        if (state.selectedOperator < 1 || state.selectedOperator > maxId) {
+          state.selectedOperator = 1;
+        }
+
         state.isModified = true;
         state.currentPatch.editorMetadata!.lastModified = new Date();
       }),
@@ -276,7 +311,8 @@ export const usePatchStore = create<PatchStore>()(
     // Actions de l'éditeur
     selectOperator: (id: number) =>
       set((state) => {
-        if (id >= 0 && id < state.currentPatch.algorithm.ops.length) {
+        // IDs d'opérateur sont 1..N
+        if (id >= 1 && id <= state.currentPatch.algorithm.ops.length) {
           state.selectedOperator = id;
         }
       }),

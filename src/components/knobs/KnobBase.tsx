@@ -36,7 +36,7 @@ function KnobBase({
     return min + ratio * (max - min);
   };
 
-  const getAngleFromEvent = (e) => {
+  const getAngleFromEvent = (e: { clientX: number; clientY: number }) => {
     if (!svgRef.current) return 0;
 
     const rect = svgRef.current.getBoundingClientRect();
@@ -49,32 +49,41 @@ function KnobBase({
     return angle;
   };
 
-  const updateFromEvent = (e: PointerEvent) => {
+  const updateFromEvent = (e: { clientX: number; clientY: number }) => {
     if (!svgRef.current) return; 
     const angle = getAngleFromEvent(e);
     const clampedAngle = Math.max(START_ANGLE, Math.min(END_ANGLE, angle));
     onChange(valueForAngle(clampedAngle));
   };
 
-  const handlePointerDown = (e) => {
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!svgRef.current) return 0;
 
     e.preventDefault();
     isDragging.current = true;
     updateFromEvent(e);
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
+
+    // Capture: garantit la réception des pointermove/up pendant le drag
+    try {
+      (svgRef.current as unknown as SVGSVGElement).setPointerCapture(e.pointerId);
+    } catch {
+      // no-op (certains environnements peuvent ne pas supporter)
+    }
   };
 
-  const handlePointerMove = (e) => {
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!svgRef.current || !isDragging.current) return;
+    e.preventDefault();
     updateFromEvent(e);
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
     isDragging.current = false;
-    window.removeEventListener("pointermove", handlePointerMove);
-    window.removeEventListener("pointerup", handlePointerUp);
+    try {
+      (svgRef.current as unknown as SVGSVGElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // no-op
+    }
   };
 
   const angle = angleForValue(value);
@@ -96,9 +105,7 @@ function KnobBase({
   
   React.useEffect(() => {
     return () => {
-      // Nettoyage au démontage
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
+      // Rien à nettoyer: pas de listeners globaux
     };
   }, []);
 
@@ -116,14 +123,16 @@ function KnobBase({
         width={size}
         height={size}
         onPointerDown={handlePointerDown}
-        style={{ userSelect: "none", cursor: "pointer" }}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        style={{ userSelect: "none", cursor: "pointer", touchAction: "none" }}
       >
         <circle
           cx={center}
           cy={center}
           r={radius * 1.2}
           fill="transparent"
-          onPointerDown={handlePointerDown}
         />
         <circle
           cx={center}

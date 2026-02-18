@@ -6,26 +6,24 @@ import { ModulationIndexes } from '../components/fmEngine/ModulationIndexes';
 import CarrierControls from '../components/fmEngine/CarrierControls';
 import { useCurrentPatch } from '../stores/patchStore';
 
-export function PatchEditor() {
-
-  const currentPatch = useCurrentPatch();
-
-  if(!currentPatch) {
-    return;
-  }
-
-  const Row = styled.div`
+const Row = styled.div`
   display: flex;
   height: auto;
   background: #1a202c;
 `;
 
-  const OperatorGrid = styled.div`
-  display:flex;
+const OperatorGrid = styled.div`
+  display: flex;
   flex-wrap: wrap;
 `;
 
-console.log("operators", currentPatch.operators);
+export function PatchEditor() {
+
+  const currentPatch = useCurrentPatch();
+
+  if(!currentPatch) {
+    return null;
+  }
 
   return (
     <div className="editor-container">

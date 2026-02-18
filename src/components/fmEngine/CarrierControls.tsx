@@ -1,4 +1,4 @@
-import { useOperator, useCurrentPatch, updateOperator } from '../../stores/patchStore';
+import { useCurrentPatch, updateOperator } from '../../stores/patchStore';
 import KnobBase from '../knobs/KnobBase';
 import styled from 'styled-components';
 
@@ -54,12 +54,6 @@ const CarrierControls = () => {
   const currentAlgorithm = currentPatch.algorithm;
   const carriers = currentAlgorithm?.ops?.filter(op => op.type === 'CARRIER') || [];
 
-  // Récupère les opérateurs en dehors de toute fonction
-  const operatorStates = carriers.map(op => ({
-    id: op.id,
-    operator: useOperator(op.id), // ✅ Hook appelé au top-level
-  }));
-
   if (carriers.length === 0) {
     return (
       <ControlsContainer>
@@ -72,7 +66,9 @@ const CarrierControls = () => {
 
   return (
     <ControlsContainer>
-      {operatorStates.map(({ id, operator }) => (
+      {carriers.map(({ id }) => {
+        const operator = currentPatch.operators.find(op => op.id === id);
+        return (
         <OperatorControl key={`carrier-${id}`}>
           <OperatorTitle>OP{id}</OperatorTitle>
 
@@ -97,13 +93,14 @@ const CarrierControls = () => {
               min="-100"
               max="100"
               value={operator?.pan ?? 0}
-              onChange={val => updateOperator(id, { pan: val })}
+              onChange={(e) => updateOperator(id, { pan: Number(e.target.value) })}
               width="80px"
             />
             <ControlLabel>Pan</ControlLabel>
           </ControlGroup>
         </OperatorControl>
-      ))}
+        );
+      })}
     </ControlsContainer>
   );
 };
