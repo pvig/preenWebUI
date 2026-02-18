@@ -248,4 +248,16 @@ export const DEFAULT_ALGORITHMS: Algorithm[] = [
       createOperator(3, "CARRIER")
     ],
   },
+    {
+    id: "alg5",
+    name: "4 Modulator, 2 Carriers",
+    ops: [
+      createOperator(1, "CARRIER"),
+      createOperator(2, "MODULATOR", { target: [1, 3] }),
+      createOperator(3, "CARRIER"),
+      createOperator(4, "MODULATOR", { target: [3] }),
+      createOperator(5, "MODULATOR", { target: [4] }),
+      createOperator(6, "MODULATOR", { target: [3] }),
+    ],
+  }
 ];

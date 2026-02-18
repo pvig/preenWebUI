@@ -22,6 +22,17 @@ const VisualizationSVG = styled.svg`
   // Positionne chaque opérateur selon l'algorithme
   const getPosition = (opId: number) => {
     const opsCount = algorithm.ops.length;
+    // Cas spécial pour alg5 : 6 opérateurs (2 carriers, 4 modulateurs)
+    if (opsCount === 6) {
+      // Les carriers (1, 3) en bas
+      if (opId === 1) return { x: 30, y: 80 };
+      if (opId === 3) return { x: 70, y: 80 };
+      // Les modulateurs distribués au-dessus
+      if (opId === 2) return { x: 20, y: 30 };
+      if (opId === 4) return { x: 50, y: 30 };
+      if (opId === 5) return { x: 80, y: 30 };
+      if (opId === 6) return { x: 50, y: 55 };
+    }
     // Cas spécial pour alg4 : 3 opérateurs, 2 carriers et 1 modulateur
     if (opsCount === 3 && algorithm.ops.filter(op => op.type === 'CARRIER').length === 2) {
       // Identifie les rôles
@@ -92,8 +103,8 @@ const VisualizationSVG = styled.svg`
 
       {/* Arrowhead marker definition */}
       <defs>
-        <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="strokeWidth">
-          <path d="M0,0 L6,3 L0,6" fill="#4FD1C5" />
+        <marker id="arrowhead" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L5,2.5 L0,5 Z" fill="#4FD1C5" />
         </marker>
       </defs>
 

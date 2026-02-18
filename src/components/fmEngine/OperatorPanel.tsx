@@ -17,7 +17,7 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
 
   return (
     <div className={`operator-panel ${opNumber === selectedOperator?.id ? 'active' : ''}`}>
-      <h3>Operator {opNumber + 1}</h3>
+      <h3>Operator {opNumber}</h3>
 
       <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
         <FrequencyKnob 

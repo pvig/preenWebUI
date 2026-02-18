@@ -1,19 +1,20 @@
 import { Select, MenuItem } from '@mui/material';
+import { WaveformType } from '../../../types/waveform';
 
 const WAVEFORMS = [
-  { value: 0, label: 'Sinus' },
-  { value: 1, label: 'Carré' },
-  { value: 2, label: 'Triangle' },
-  { value: 3, label: 'Dent de scie' }
+  { value: 'SINE', label: 'Sinus' },
+  { value: 'SQUARE', label: 'Carré' },
+  { value: 'TRIANGLE', label: 'Triangle' },
+  { value: 'SAW', label: 'Dent de scie' }
 ];
 
-export const WaveformSelector = ({ value, onChange }) => {
+export const WaveformSelector = ({ value, onChange }: { value?: WaveformType; onChange: (v: WaveformType) => void }) => {
   return (
     <div className="operator-control">
       <label>Forme d'onde</label>
       <Select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={value || 'SINE'}
+        onChange={(e) => onChange(e.target.value as WaveformType)}
         size="small"
         variant="standard"
       >

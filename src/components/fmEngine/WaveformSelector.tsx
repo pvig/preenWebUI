@@ -5,7 +5,7 @@ import { cn } from '../../utils/cn';
 import { generateWaveformPath, waveformToDisplayName } from '../../utils/waveformUtils';
 
 interface WaveformSelectorProps {
-  value: number;
+  value: WaveformType;
   onChange: (waveform: WaveformType) => void;
   disabled?: boolean;
   compact?: boolean;
