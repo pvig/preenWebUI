@@ -32,7 +32,7 @@ export interface Operator {
   amplitude: number;      // 0.0 à 1.0
   pan: number;           // -1.0 (gauche) à 1.0 (droite)
   type: 'CARRIER' | 'MODULATOR'
-  modulators: number[];
+  target: number[];
 
   // Enveloppe ADSR
   adsr: AdsrState;
@@ -172,7 +172,7 @@ export type PatchAction =
   | { type: 'MARK_MODIFIED'; payload: boolean };
 
 // Utilitaires de type
-export type OperatorParameter = keyof Omit<Operator, 'id' | 'adsr' | 'modulators'>;
+export type OperatorParameter = keyof Omit<Operator, 'id' | 'adsr' | 'target'>;
 export type ADSRParameter = keyof AdsrState;
 export type GlobalParameter = keyof Patch['global'];
 
@@ -195,7 +195,7 @@ export const DEFAULT_OPERATOR: Omit<Operator, 'id'> = {
   amplitude: 100,
   pan: 0,
   adsr: DEFAULT_ADSR,
-  modulators: [],
+  target: [],
   feedbackAmount: 0,
   velocitySensitivity: 0.5
 };
@@ -218,8 +218,8 @@ export const DEFAULT_ALGORITHMS: Algorithm[] = [
     id: "alg1",
     name: "1 Carrier, 1 Modulator",
     ops: [
-      createOperator(1, "CARRIER", { modulators: [1] }),
-      createOperator(2, "MODULATOR")
+      createOperator(1, "CARRIER"),
+      createOperator(2, "MODULATOR", { target: [1] }),
     ],
   },
   {
@@ -234,17 +234,17 @@ export const DEFAULT_ALGORITHMS: Algorithm[] = [
     id: "alg3",
     name: "2 Modulators en série vers 1 Carrier",
     ops: [
-      createOperator(1, "CARRIER", { modulators: [1, 2] }),
-      createOperator(2, "MODULATOR"),
-      createOperator(3, "MODULATOR")
+      createOperator(1, "CARRIER"),
+      createOperator(2, "MODULATOR", { target: [1] }),
+      createOperator(3, "MODULATOR", { target: [2] })
     ],
   },
   {
     id: "alg4",
-    name: "2 Modulators parallèles vers 1 Carrier",
+    name: "1 Modulator vers 2 Carriers",
     ops: [
-      createOperator(1, "CARRIER", { modulators: [1] }),
-      createOperator(2, "MODULATOR"),
+      createOperator(1, "CARRIER"),
+      createOperator(2, "MODULATOR", { target: [1, 3] }),
       createOperator(3, "CARRIER")
     ],
   },

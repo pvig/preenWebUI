@@ -122,14 +122,6 @@ export const FMAlgorithmSelector = () => {
 
       <VisualizationWrapper>
         <AlgorithmVisualization algorithm={currentAlgorithm} />
-
-        <CarriersIndicator>
-          {carriers.map(op => (
-            <CarrierBadge key={`carrier-badge-${op.id}`}>
-              {op.id}
-            </CarrierBadge>
-          ))}
-        </CarriersIndicator>
       </VisualizationWrapper>
 
     </SelectorContainer>

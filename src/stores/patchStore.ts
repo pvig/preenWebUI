@@ -174,7 +174,7 @@ export const usePatchStore = create<PatchStore>()(
               ...existing,
               id: algoOp.id,
               type: algoOp.type,
-              modulators: [...algoOp.modulators],
+              target: [...algoOp.target],
             };
           }
 
@@ -182,7 +182,7 @@ export const usePatchStore = create<PatchStore>()(
             ...DEFAULT_OPERATOR,
             id: algoOp.id,
             type: algoOp.type,
-            modulators: [...algoOp.modulators],
+            target: [...algoOp.target],
           };
         });
 
@@ -259,9 +259,9 @@ export const usePatchStore = create<PatchStore>()(
         const sourceOsc = state.currentPatch.operators.find(osc => osc.id === sourceId);
         if (sourceOsc && sourceId !== targetId) {
           // Vérifier si la modulation existe déjà
-          const existingMod = sourceOsc.modulators.find(mod => mod === targetId);
+          const existingMod = sourceOsc.target.find(mod => mod === targetId);
           if (!existingMod) {
-            sourceOsc.modulators.push(targetId);
+            sourceOsc.target.push(targetId);
             state.isModified = true;
             state.currentPatch.editorMetadata!.lastModified = new Date();
           }
@@ -272,7 +272,7 @@ export const usePatchStore = create<PatchStore>()(
       set((state) => {
         const sourceOsc = state.currentPatch.operators.find(osc => osc.id === sourceId);
         if (sourceOsc) {
-          sourceOsc.modulators = sourceOsc.modulators.filter(
+          sourceOsc.target = sourceOsc.target.filter(
             mod => mod !== targetId
           );
           state.isModified = true;
@@ -284,7 +284,7 @@ export const usePatchStore = create<PatchStore>()(
       set((state) => {
         const sourceOsc = state.currentPatch.operators.find(osc => osc.id === sourceId);
         if (sourceOsc) {
-          const modulation = sourceOsc.modulators.find(mod => mod === targetId);
+          const modulation = sourceOsc.target.find(mod => mod === targetId);
           if (modulation) {
             //modulation.amount = amount;
             state.isModified = true;

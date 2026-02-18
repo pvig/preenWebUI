@@ -7,69 +7,117 @@ const VisualizationSVG = styled.svg`
   height: 100px;
 `;
 
-export const AlgorithmVisualization: React.FC<Algorithm> = (algorithm:Algorithm) => {
+ export const AlgorithmVisualization: React.FC<{ algorithm: Algorithm }> = ({ algorithm }) => {
+    // Sécurité : si algorithm ou algorithm.ops est undefined, n'affiche rien
+    if (!algorithm || !algorithm.ops) {
+      return (
+        <svg width="100%" height="100px" viewBox="0 0 100 100">
+          <text x="10" y="50" fontSize="10" fill="red">Aucun algorithme à afficher</text>
+        </svg>
+      );
+    }
+    // Debug: affiche la liste des opérateurs reçus
+    const debugText = algorithm.ops.map(op => `id:${op.id} type:${op.type}`).join(' | ');
+  // Dynamically position operators in a circle
+  // Positionne chaque opérateur selon l'algorithme
   const getPosition = (opId: number) => {
-    // Positionnement spécifique pour correspondre au PreenFM
-    const positions = algorithm.ops.length === 4
-      ? [
-        { x: 50, y: 30 },  // OP1 (en haut)
-        { x: 25, y: 70 },  // OP2 (bas gauche)
-        { x: 75, y: 70 },  // OP3 (bas droit)
-        { x: 50, y: 90 }   // OP4 (tout en bas)
-      ]
-      : [
-        { x: 50, y: 20 },  // OP1 (en haut)
-        { x: 20, y: 50 },  // OP2 (milieu gauche)
-        { x: 50, y: 50 },  // OP3 (centre)
-        { x: 80, y: 50 },  // OP4 (milieu droit)
-        { x: 30, y: 80 },  // OP5 (bas gauche)
-        { x: 70, y: 80 }   // OP6 (bas droit)
-      ];
-
-    return positions[opId - 1] || { x: 50, y: 50 };
+    const opsCount = algorithm.ops.length;
+    // Cas spécial pour alg4 : 3 opérateurs, 2 carriers et 1 modulateur
+    if (opsCount === 3 && algorithm.ops.filter(op => op.type === 'CARRIER').length === 2) {
+      // Identifie les rôles
+      if (opId === 1) return { x: 30, y: 80 };
+      if (opId === 3) return { x: 70, y: 80 };
+      if (opId === 2) return { x: 50, y: 20 };
+    }
+    // Cas spécial pour 2 opérateurs (alg2 : deux carriers)
+    if (opsCount === 2) {
+      // Pour alg1 : modulateur au-dessus du carrier
+      if (algorithm.ops.some(op => op.type === 'MODULATOR')) {
+        // Carrier en bas, modulateur en haut
+        const op = algorithm.ops.find(o => o.id === opId);
+        if (op?.type === 'CARRIER') return { x: 50, y: 80 };
+        else return { x: 50, y: 20 };
+      } else {
+        // Cas deux carriers (alg2) : alignés en bas
+        return { x: 30 + 40 * algorithm.ops.map(op => op.id).indexOf(opId), y: 80 };
+      }
+    }
+    // Cas spécial pour 3 opérateurs (chaîne)
+    if (opsCount === 3) {
+      // Pour alg3 : modulateur 3 en haut, modulateur 2 au centre, carrier 1 en bas
+      let y = 50;
+      if (opId === 3) y = 20;
+      else if (opId === 2) y = 50;
+      else if (opId === 1) y = 80;
+      return { x: 50, y };
+    }
+    // Par défaut : cercle
+    const idx = algorithm.ops.map(op => op.id).indexOf(opId);
+    const radius = 35;
+    const centerX = 50;
+    const centerY = 50;
+    const angle = (2 * Math.PI * idx) / opsCount;
+    return {
+      x: centerX + radius * Math.cos(angle - Math.PI / 2),
+      y: centerY + radius * Math.sin(angle - Math.PI / 2)
+    };
   };
 
   return (
     <VisualizationSVG viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-      {/* Connexions */}
-      {algorithm.ops?.map(op =>
-        op.modulators.map(modId => {
-          const from = getPosition(modId);
-          const to = getPosition(op.id);
-          return (
-            <line
-              key={`${modId}-${op.id}`}
-              x1={from.x}
-              y1={from.y}
-              x2={to.x}
-              y2={to.y}
-              stroke="#4FD1C5"
-              strokeWidth="1.5"
-              strokeOpacity="0.7"
-            />
-          );
-        })
+      {/* Debug: affiche la liste des opérateurs reçus */}
+      <text x="5" y="10" fontSize="5" fill="#2D3748">{debugText}</text>
+      {/* Draw connections: relie uniquement les positions des opérateurs existants */}
+      {algorithm.ops?.flatMap(op =>
+        op.target
+          .filter(targetId => algorithm.ops.some(o => o.id === targetId))
+          .map(targetId => {
+            const from = getPosition(op.id);
+            const to = getPosition(targetId);
+            return (
+              <line
+                key={`conn-${op.id}-${targetId}`}
+                x1={from.x}
+                y1={from.y}
+                x2={to.x}
+                y2={to.y}
+                stroke="#4FD1C5"
+                strokeWidth="2"
+                strokeOpacity="0.7"
+                markerEnd="url(#arrowhead)"
+              />
+            );
+          })
       )}
 
-      {/* Opérateurs */}
+      {/* Arrowhead marker definition */}
+      <defs>
+        <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L6,3 L0,6" fill="#4FD1C5" />
+        </marker>
+      </defs>
+
+      {/* Draw all operators (modulateurs and carriers) - aucun doublon */}
       {algorithm.ops?.map(op => {
         const pos = getPosition(op.id);
+        let color = op.type === 'CARRIER' ? "#68D391" : "#63B3ED";
+        let radius = op.type === 'CARRIER' ? 10 : 7;
         return (
           <g key={op.id}>
             <circle
               cx={pos.x}
               cy={pos.y}
-              r="6"
-              fill={op.type === 'CARRIER' ? "#68D391" : "#63B3ED"}
+              r={radius}
+              fill={color}
               stroke="#2D3748"
-              strokeWidth="1.5"
+              strokeWidth="2"
             />
             <text
               x={pos.x}
               y={pos.y + 4}
               textAnchor="middle"
               fill="white"
-              fontSize="6"
+              fontSize="7"
               fontWeight="bold"
             >
               {op.id}
