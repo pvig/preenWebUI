@@ -10,7 +10,7 @@ const EditorContainer = styled.div`
   border-radius: 8px;
   padding: 10px;
   width: 100%;
-  max-width: 260px;
+  max-width: 400px;
   box-sizing: border-box;
   max-height: 400px;
   overflow-y: auto;
@@ -46,12 +46,14 @@ const ModulationItem = styled.div`
 
 const Label = styled.label`
   display: inline-block;
-  flex: 0 0 95px;
+  flex: 0 0 200px;
   color: #a0aec0;
   font-size: 0.7rem;
   line-height: 1.1;
   font-weight: 500;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const SliderContainer = styled.div`

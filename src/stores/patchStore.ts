@@ -30,10 +30,9 @@ const createDefaultPatch = (): Patch => ({
   tags: [],
   algorithm: DEFAULT_ALGORITHMS[DEFAULT_ALGO_ID],
 
-  // On aligne les IDs des opérateurs du patch sur ceux de l'algorithme
-  operators: Array.from({ length: DEFAULT_ALGORITHMS[DEFAULT_ALGO_ID].ops.length }, (_, i) => ({
-    id: i + 1, // IDs 1..N comme dans DEFAULT_ALGORITHMS.ops
-    ...DEFAULT_OPERATOR,
+  // On utilise les opérateurs de l'algorithme qui ont déjà les targets configurés
+  operators: DEFAULT_ALGORITHMS[DEFAULT_ALGO_ID].ops.map((op, i) => ({
+    ...op,
     enabled: i === 0, // Seul le premier oscillateur est activé par défaut
     frequency: i === 0 ? 8 : 8 * (i + 1) // Fréquences harmoniques
   })),
