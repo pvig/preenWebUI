@@ -12,6 +12,7 @@ export interface ModulationTarget {
 export interface ModulationLink {
   id: number;      // ID de l'opérateur cible
   im: number;      // Index de Modulation (0-100)
+  modulationIndexVelo: number; // Sensibilité à la vélocité (0-100)
 }
 
 export interface LFO {
@@ -246,7 +247,8 @@ function diagramToAlgorithm(diagram: AlgoDiagram): Algorithm {
     // Les self-loops (feedback) sont traités comme des targets normaux avec un IM dédié
     const targetLinks: ModulationLink[] = targets.map(targetId => ({
       id: parseInt(targetId.replace(/\D/g, '')),
-      im: 0 // Valeur initiale de modulation (IM)
+      im: 0, // Valeur initiale de modulation (IM)
+      modulationIndexVelo: 0 // Sensibilité à la vélocité
     }));
     
     return createOperator(opId, node.type, {

@@ -191,6 +191,7 @@ export class PreenFM3Parser {
     });
     
     // Modulation Indexes (IM1-IM6): indices 4, 6, 8, 10, 12, 14
+    // Modulation Velo (IMVelo1-6): indices 5, 7, 9, 11, 13, 15
     // Based on firmware row structure: ROW_MODULATION1/2/3 with alternating encoders
     const im1 = (this.getValue(0, 4) ?? 0) / 10; // Index 4: IM1 (0-100 -> 0-10)
     const im2 = (this.getValue(0, 6) ?? 0) / 10; // Index 6: IM2
@@ -199,7 +200,15 @@ export class PreenFM3Parser {
     const im5 = (this.getValue(0, 12) ?? 0) / 10; // Index 12: IM5
     const im6 = (this.getValue(0, 14) ?? 0) / 10; // Index 14: IM6 (feedback)
     
+    const imVelo1 = (this.getValue(0, 5) ?? 0) / 10; // Index 5: IMVelo1
+    const imVelo2 = (this.getValue(0, 7) ?? 0) / 10; // Index 7: IMVelo2
+    const imVelo3 = (this.getValue(0, 9) ?? 0) / 10; // Index 9: IMVelo3
+    const imVelo4 = (this.getValue(0, 11) ?? 0) / 10; // Index 11: IMVelo4
+    const imVelo5 = (this.getValue(0, 13) ?? 0) / 10; // Index 13: IMVelo5
+    const imVelo6 = (this.getValue(0, 15) ?? 0) / 10; // Index 15: IMVelo6
+    
     const ims = [im1, im2, im3, im4, im5, im6];
+    const imVelos = [imVelo1, imVelo2, imVelo3, imVelo4, imVelo5, imVelo6];
     
     // Appliquer les IMs aux targets (basé sur la topologie de l'algorithme)
     let imIndex = 0;
@@ -207,6 +216,7 @@ export class PreenFM3Parser {
       op.target.forEach(target => {
         if (imIndex < ims.length) {
           target.im = ims[imIndex];
+          target.modulationIndexVelo = imVelos[imIndex] ?? 0;
           imIndex++;
         }
       });

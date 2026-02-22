@@ -1,14 +1,15 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Algorithm } from '../../types/patch';
-import { useCurrentPatch, updateModulationAmount } from '../../stores/patchStore';
+import { useCurrentPatch, updateModulationAmount, updateModulationVelo } from '../../stores/patchStore';
 import { useFMSynthContext } from './FMSynthContext';
 import { ALGO_DIAGRAMS } from '../../algo/algorithms.static';
+import KnobBase from '../knobs/KnobBase';
 
 const EditorContainer = styled.div`
   background: #2d3748;
   border-radius: 8px;
-  padding: 10px;
+  padding: 8px;
   width: 100%;
   max-width: 400px;
   box-sizing: border-box;
@@ -23,59 +24,70 @@ const EditorContainer = styled.div`
 `;
 
 const EditorTitle = styled.h3`
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   color: #cbd5e0;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
 `;
 
 const ModulationItem = styled.div`
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #4a5568;
-
-  &:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-  }
+  margin-bottom: 1px;
+  padding: 4px 8px;
+  background: #1a202c;
+  border-radius: 4px;
 `;
 
 const Label = styled.label`
-  display: inline-block;
-  flex: 0 0 200px;
-  color: #a0aec0;
+  flex: 1;
+  min-width: 140px;
+  color: #cbd5e0;
   font-size: 0.7rem;
-  line-height: 1.1;
-  font-weight: 500;
+  line-height: 1;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
-const SliderContainer = styled.div`
+const KnobsContainer = styled.div`
   display: flex;
-  flex: 1;
+  gap: 12px;
   align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
 `;
 
-const Slider = styled.input`
-  flex: 1;
-  min-width: 0;
-  width: 100%;
-  cursor: pointer;
+const KnobWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  
+  /* Repositionner la valeur du knob à gauche */
+  > div {
+    position: relative;
+    
+    /* Cibler le div de valeur interne du KnobBase et le déplacer à gauche */
+    > div:last-child {
+      bottom: 20px !important;
+      left: -36px !important;
+      width: auto;
+      text-align: right;
+      color: #63b3ed;
+      font-weight: bold;
+      font-size: 11px;
+    }
+  }
 `;
 
-const ValueDisplay = styled.span`
-  color: #63b3ed;
-  font-size: 0.75rem;
-  font-weight: bold;
-  min-width: 20px;
-  text-align: right;
+const KnobLabel = styled.span`
+  color: #a0aec0;
+  font-size: 0.6rem;
+  font-weight: 500;
+  text-transform: uppercase;
 `;
 
 interface ModulationIndexesEditorProps {
@@ -95,6 +107,7 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
     sourceId: number;
     targetId: number;
     im: number;
+    modulationIndexVelo: number;
     edgeKind?: "modulation" | "sync";
   }> = [];
 
@@ -128,6 +141,7 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
         sourceId: op.id,
         targetId: targetLink.id,
         im: targetLink.im,
+        modulationIndexVelo: targetLink.modulationIndexVelo ?? 0,
         edgeKind: edge?.kind
       });
     });
@@ -136,6 +150,11 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
   const handleIMChange = (sourceId: number, targetId: number, newValue: number) => {
     updateModulationAmount(sourceId, targetId, newValue);
     // Mettre en évidence la liaison pendant l'édition
+    setHighlightedLink({ sourceId, targetId });
+  };
+
+  const handleVeloChange = (sourceId: number, targetId: number, newValue: number) => {
+    updateModulationVelo(sourceId, targetId, newValue);
     setHighlightedLink({ sourceId, targetId });
   };
 
@@ -156,7 +175,7 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
         
         let label: string;
         if (isFeedback) {
-          label = `IM${link.imIndex}: Op${link.sourceId} ↻ `;
+          label = `IM${link.imIndex}: Op${link.sourceId} feedback `;
         } else {
           label = `IM${link.imIndex}: Op${link.sourceId} → Op${link.targetId}`;
         }
@@ -168,18 +187,40 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
             onMouseLeave={() => setHighlightedLink(null)}
           >
             <Label>{label}</Label>
-            <SliderContainer>
-              <Slider
-                type="range"
-                min="0"
-                max="100"
-                value={link.im}
-                onChange={(e) => handleIMChange(link.sourceId, link.targetId, parseInt(e.target.value))}
-                onMouseUp={() => setHighlightedLink(null)}
-                onTouchEnd={() => setHighlightedLink(null)}
-              />
-              <ValueDisplay>{link.im}</ValueDisplay>
-            </SliderContainer>
+            <KnobsContainer>
+              <KnobWrapper>
+                <KnobLabel>IM</KnobLabel>
+                <KnobBase
+                  size={50}
+                  knobRadius={12}
+                  min={0}
+                  max={100}
+                  value={link.im}
+                  onChange={(val) => handleIMChange(link.sourceId, link.targetId, Math.round(val))}
+                  color="#0ea5e9"
+                  backgroundColor="#1a202c"
+                  strokeColor="#4a5568"
+                  renderLabel={(val) => Math.round(val)}
+                  label={null}
+                />
+              </KnobWrapper>
+              <KnobWrapper>
+                <KnobLabel>Velo</KnobLabel>
+                <KnobBase
+                  size={50}
+                  knobRadius={12}
+                  min={0}
+                  max={100}
+                  value={link.modulationIndexVelo}
+                  onChange={(val) => handleVeloChange(link.sourceId, link.targetId, Math.round(val))}
+                  color="#7c3aed"
+                  backgroundColor="#1a202c"
+                  strokeColor="#4a5568"
+                  renderLabel={(val) => Math.round(val)}
+                  label={null}
+                />
+              </KnobWrapper>
+            </KnobsContainer>
           </ModulationItem>
         );
       })}

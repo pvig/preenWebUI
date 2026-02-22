@@ -1,6 +1,7 @@
 import { useCurrentPatch, updateOperator } from '../../stores/patchStore';
 import KnobBase from '../knobs/KnobBase';
 import styled from 'styled-components';
+import { useFMSynthContext } from './FMSynthContext';
 
 const ControlsContainer = styled.div`
   display: flex;
@@ -11,7 +12,7 @@ const ControlsContainer = styled.div`
   background: #1a202c;
 `;
 
-const OperatorControl = styled.div`
+const OperatorControl = styled.div<{ $isHighlighted?: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -19,6 +20,14 @@ const OperatorControl = styled.div`
   padding: 15px;
   background: #2d3748;
   border-radius: 6px;
+  border: 2px solid transparent;
+  transition: border-color 3s ease, box-shadow 3s ease;
+  
+  ${props => props.$isHighlighted && `
+    border-color: #fbbf24;
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+    transition: border-color 0.03s ease, box-shadow 0.03s ease;
+  `}
 `;
 
 const OperatorTitle = styled.h4`
@@ -54,6 +63,7 @@ const CarrierControls = () => {
   const currentPatch = useCurrentPatch();
   const currentAlgorithm = currentPatch.algorithm;
   const carriers = currentAlgorithm?.ops?.filter(op => op.type === 'CARRIER') || [];
+  const { setHighlightedNode, highlightedNode } = useFMSynthContext();
 
   if (carriers.length === 0) {
     return (
@@ -70,7 +80,12 @@ const CarrierControls = () => {
       {carriers.map(({ id }) => {
         const operator = currentPatch.operators.find(op => op.id === id);
         return (
-        <OperatorControl key={`carrier-${id}`}>
+        <OperatorControl 
+          key={`carrier-${id}`}
+          $isHighlighted={highlightedNode === id}
+          onMouseEnter={() => setHighlightedNode(id)}
+          onMouseLeave={() => setHighlightedNode(null)}
+        >
           <OperatorTitle>OP{id}</OperatorTitle>
 
           <ControlGroup>

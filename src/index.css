@@ -66,6 +66,14 @@ button:focus-visible {
 .operator-panel {
   background-color: #2d3748;
   padding: 0;
+  border: 2px solid transparent;
+  transition: border-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+.operator-panel.highlighted {
+  border-color: #fbbf24;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+  transition: border-color 0.03s ease, box-shadow 0.03s ease;
 }
 .adsr {
   background: #1d1d1d;

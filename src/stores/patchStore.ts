@@ -139,6 +139,7 @@ interface PatchStore extends EditorState {
   addModulation: (sourceId: number, targetId: number, amount: number) => void;
   removeModulation: (sourceId: number, targetId: number) => void;
   updateModulationAmount: (sourceId: number, targetId: number, amount: number) => void;
+  updateModulationVelo: (sourceId: number, targetId: number, velo: number) => void;
 
   // Actions globales
   updateGlobal: (changes: Partial<Patch['global']>) => void;
@@ -280,7 +281,7 @@ export const usePatchStore = create<PatchStore>()(
           // Vérifier si la modulation existe déjà
           const existingMod = sourceOsc.target.find(mod => mod.id === targetId);
           if (!existingMod) {
-            sourceOsc.target.push({ id: targetId, im: amount });
+            sourceOsc.target.push({ id: targetId, im: amount, modulationIndexVelo: 0 });
             state.isModified = true;
             updateLastModified(state.currentPatch);
           }
@@ -306,6 +307,19 @@ export const usePatchStore = create<PatchStore>()(
           const modulation = sourceOsc.target.find(mod => mod.id === targetId);
           if (modulation) {
             modulation.im = Math.max(0, Math.min(100, amount));
+            state.isModified = true;
+            updateLastModified(state.currentPatch);
+          }
+        }
+      }),
+
+    updateModulationVelo: (sourceId: number, targetId: number, velo: number) =>
+      set((state) => {
+        const sourceOsc = state.currentPatch.operators.find(osc => osc.id === sourceId);
+        if (sourceOsc) {
+          const modulation = sourceOsc.target.find(mod => mod.id === targetId);
+          if (modulation) {
+            modulation.modulationIndexVelo = Math.max(0, Math.min(100, velo));
             state.isModified = true;
             updateLastModified(state.currentPatch);
           }
@@ -453,6 +467,9 @@ export const updateADSR = (operatorId: number, envelope: Partial<AdsrState>) =>
 
 export const updateModulationAmount = (sourceId: number, targetId: number, amount: number) =>
   usePatchStore.getState().updateModulationAmount(sourceId, targetId, amount);
+
+export const updateModulationVelo = (sourceId: number, targetId: number, velo: number) =>
+  usePatchStore.getState().updateModulationVelo(sourceId, targetId, velo);
 
 export const useIsModified = () => usePatchStore(state => state.isModified);
 export const useActiveTab = () => usePatchStore(state => state.ui.activeTab);

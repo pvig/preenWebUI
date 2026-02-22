@@ -6,6 +6,7 @@ import { FineTuneKnob } from './operator/FineTuneKnob';
 import { FrequencyKnob } from './operator/FrequencyKnob';
 import { KeyboardTrackingSelect } from './operator/KeyboardTrackingSelect';
 import { useOperator, updateOperator } from '../../stores/patchStore';
+import { useFMSynthContext } from './FMSynthContext';
 
 interface OperatorPanelProps {
   opNumber: number;
@@ -13,10 +14,16 @@ interface OperatorPanelProps {
 
 export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
   const selectedOperator = useOperator(opNumber);
+  const { highlightedNode, setHighlightedNode } = useFMSynthContext();
   const opId = opNumber;
+  const isHighlighted = highlightedNode === opNumber;
 
   return (
-    <div className={`operator-panel ${opNumber === selectedOperator?.id ? 'active' : ''}`}>
+    <div 
+      className={`operator-panel ${opNumber === selectedOperator?.id ? 'active' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+      onMouseEnter={() => setHighlightedNode(opNumber)}
+      onMouseLeave={() => setHighlightedNode(null)}
+    >
       <h3>Operator {opNumber}</h3>
 
       <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
