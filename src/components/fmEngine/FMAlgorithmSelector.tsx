@@ -44,6 +44,34 @@ const NavButton = styled.button`
   }
 `;
 
+const AlgorithmSelect = styled.select`
+  flex: 1;
+  padding: 8px 12px;
+  background: #1a202c;
+  color: #cbd5e0;
+  border: 2px solid #4a5568;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #63b3ed;
+  }
+
+  &:focus {
+    border-color: #63b3ed;
+    box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+  }
+
+  option {
+    background: #1a202c;
+    color: #cbd5e0;
+  }
+`;
+
 const VisualizationWrapper = styled.div`
   background: #1a202c;
   border-radius: 8px;
@@ -85,6 +113,13 @@ export const FMAlgorithmSelector = () => {
     selectAlgorithm(DEFAULT_ALGORITHMS[newIndex]);
   };
 
+  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedAlgo = DEFAULT_ALGORITHMS.find(a => String(a.id) === event.target.value);
+    if (selectedAlgo) {
+      selectAlgorithm(selectedAlgo);
+    }
+  };
+
   return (
     <SelectorContainer>
 
@@ -97,10 +132,17 @@ export const FMAlgorithmSelector = () => {
           ←
         </NavButton>
 
-        <div style={{ flexGrow: 1, textAlign: 'center' }}>
-          {/* Pourrait ajouter un sélecteur déroulant ici */}
-          {currentAlgorithm.name}
-        </div>
+        <AlgorithmSelect 
+          value={String(currentAlgorithm.id)} 
+          onChange={handleSelectChange}
+          aria-label="Select algorithm"
+        >
+          {DEFAULT_ALGORITHMS.map((algo) => (
+            <option key={String(algo.id)} value={String(algo.id)}>
+              {algo.name}
+            </option>
+          ))}
+        </AlgorithmSelect>
 
         <NavButton
           onClick={handleNext}

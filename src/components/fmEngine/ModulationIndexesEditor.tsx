@@ -2,6 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import { Algorithm } from '../../types/patch';
 import { useCurrentPatch, updateModulationAmount } from '../../stores/patchStore';
+import { useFMSynthContext } from './FMSynthContext';
+import { ALGO_DIAGRAMS } from '../../algo/algorithms.static';
 
 const EditorContainer = styled.div`
   background: #2d3748;
@@ -78,8 +80,12 @@ interface ModulationIndexesEditorProps {
   algorithm: Algorithm;
 }
 
-export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = ({ algorithm: _algorithm }) => {
+export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = ({ algorithm }) => {
   const currentPatch = useCurrentPatch();
+  const { setHighlightedLink } = useFMSynthContext();
+
+  // Trouver le diagramme de l'algorithme pour connaître les types d'edges
+  const diagram = ALGO_DIAGRAMS.find(d => d.id === String(algorithm.id));
 
   // Collecte toutes les liaisons avec leurs indices à partir des opérateurs du patch
   const modulationLinks: Array<{
@@ -87,6 +93,7 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
     sourceId: number;
     targetId: number;
     im: number;
+    edgeKind?: "modulation" | "sync";
   }> = [];
 
   if (!currentPatch || !currentPatch.operators) {
@@ -107,19 +114,27 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
           currentPatch.operators.some(o => o.id === tl.id)
         ).length;
       }
-      imIndex += targetIndex + 1;
+      imIndex += targetIndex;
+
+      // Trouver le type d'edge dans le diagramme
+      const edge = diagram?.edges.find(e => 
+        e.from === `op${op.id}` && e.to === `op${targetLink.id}`
+      );
 
       modulationLinks.push({
         imIndex,
         sourceId: op.id,
         targetId: targetLink.id,
         im: targetLink.im,
+        edgeKind: edge?.kind
       });
     });
   });
 
   const handleIMChange = (sourceId: number, targetId: number, newValue: number) => {
     updateModulationAmount(sourceId, targetId, newValue);
+    // Mettre en évidence la liaison pendant l'édition
+    setHighlightedLink({ sourceId, targetId });
   };
 
   if (modulationLinks.length === 0) {
@@ -134,21 +149,38 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
   return (
     <EditorContainer>
       <EditorTitle>Index de Modulation</EditorTitle>
-      {modulationLinks.map((link) => (
-        <ModulationItem key={`im-${link.sourceId}-${link.targetId}`}>
-          <Label>IM{link.imIndex}: Op{link.sourceId} → Op{link.targetId}</Label>
-          <SliderContainer>
-            <Slider
-              type="range"
-              min="0"
-              max="100"
-              value={link.im}
-              onChange={(e) => handleIMChange(link.sourceId, link.targetId, parseInt(e.target.value))}
-            />
-            <ValueDisplay>{link.im}</ValueDisplay>
-          </SliderContainer>
-        </ModulationItem>
-      ))}
+      {modulationLinks.map((link) => {
+        const isFeedback = link.sourceId === link.targetId;
+        
+        let label: string;
+        if (isFeedback) {
+          label = `IM${link.imIndex}: Op${link.sourceId} ↻ `;
+        } else {
+          label = `IM${link.imIndex}: Op${link.sourceId} → Op${link.targetId}`;
+        }
+        
+        return (
+          <ModulationItem 
+            key={`im-${link.sourceId}-${link.targetId}`}
+            onMouseEnter={() => setHighlightedLink({ sourceId: link.sourceId, targetId: link.targetId })}
+            onMouseLeave={() => setHighlightedLink(null)}
+          >
+            <Label>{label}</Label>
+            <SliderContainer>
+              <Slider
+                type="range"
+                min="0"
+                max="100"
+                value={link.im}
+                onChange={(e) => handleIMChange(link.sourceId, link.targetId, parseInt(e.target.value))}
+                onMouseUp={() => setHighlightedLink(null)}
+                onTouchEnd={() => setHighlightedLink(null)}
+              />
+              <ValueDisplay>{link.im}</ValueDisplay>
+            </SliderContainer>
+          </ModulationItem>
+        );
+      })}
     </EditorContainer>
   );
 };

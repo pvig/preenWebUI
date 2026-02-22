@@ -1,5 +1,6 @@
 import { AdsrState, AdsrPoint } from './adsr';
 import { WaveformType } from './waveform.ts';
+import { ALGO_DIAGRAMS, type AlgoDiagram } from '../algo/algorithms.static';
 
 // types/patch.ts
 
@@ -220,51 +221,49 @@ function createOperator(
   };
 }
 
-export const DEFAULT_ALGORITHMS: Algorithm[] = [
-  {
-    id: "alg1",
-    name: "1 Carrier, 1 Modulator",
-    ops: [
-      createOperator(1, "CARRIER"),
-      createOperator(2, "MODULATOR", { target: [{ id: 1, im: 0 }] }),
-    ],
-  },
-  {
-    id: "alg2",
-    name: "2 Carriers indépendants",
-    ops: [
-      createOperator(1, "CARRIER"),
-      createOperator(2, "CARRIER")
-    ],
-  },
-  {
-    id: "alg3",
-    name: "2 Modulators en série vers 1 Carrier",
-    ops: [
-      createOperator(1, "CARRIER"),
-      createOperator(2, "MODULATOR", { target: [{ id: 1, im: 0 }] }),
-      createOperator(3, "MODULATOR", { target: [{ id: 2, im: 0 }] })
-    ],
-  },
-  {
-    id: "alg4",
-    name: "1 Modulator vers 2 Carriers",
-    ops: [
-      createOperator(1, "CARRIER"),
-      createOperator(2, "MODULATOR", { target: [{ id: 1, im: 0 }, { id: 3, im: 0 }] }),
-      createOperator(3, "CARRIER")
-    ],
-  },
-    {
-    id: "alg5",
-    name: "4 Modulator, 2 Carriers",
-    ops: [
-      createOperator(1, "CARRIER"),
-      createOperator(2, "MODULATOR", { target: [{ id: 1, im: 0 }, { id: 3, im: 0 }, { id: 2, im: 0 }] }),
-      createOperator(3, "CARRIER"),
-      createOperator(4, "MODULATOR", { target: [{ id: 3, im: 0 }] }),
-      createOperator(5, "MODULATOR", { target: [{ id: 4, im: 0 }] }),
-      createOperator(6, "MODULATOR", { target: [{ id: 3, im: 0 }] }),
-    ],
-  }
-];
+/**
+ * Convertit un AlgoDiagram (définition visuelle) en Algorithm (définition fonctionnelle)
+ * @param diagram - Diagramme de l'algorithme avec nodes et edges
+ * @returns Algorithm complet avec opérateurs configurés
+ */
+function diagramToAlgorithm(diagram: AlgoDiagram): Algorithm {
+  // Construire la structure des edges : source -> targets[]
+  const edgeMap = new Map<string, string[]>();
+  
+  diagram.edges.forEach(edge => {
+    if (!edgeMap.has(edge.from)) {
+      edgeMap.set(edge.from, []);
+    }
+    edgeMap.get(edge.from)!.push(edge.to);
+  });
+  
+  // Créer les opérateurs
+  const ops = diagram.nodes.map(node => {
+    const opId = parseInt(node.id.replace(/\D/g, '')); // "op1" -> 1
+    const targets = edgeMap.get(node.id) || [];
+    
+    // Construire la liste des targets (INCLURE les self-loops pour le feedback)
+    // Les self-loops (feedback) sont traités comme des targets normaux avec un IM dédié
+    const targetLinks: ModulationLink[] = targets.map(targetId => ({
+      id: parseInt(targetId.replace(/\D/g, '')),
+      im: 0 // Valeur initiale de modulation (IM)
+    }));
+    
+    return createOperator(opId, node.type, {
+      target: targetLinks,
+    });
+  });
+  
+  // Trier les opérateurs par ID
+  ops.sort((a, b) => a.id - b.id);
+  
+  return {
+    id: diagram.id,
+    name: diagram.name,
+    ops
+  };
+}
+
+// Générer automatiquement les 32 algorithmes PreenFM3 à partir des diagrammes visuels
+// Cette approche élimine la redondance et garantit la cohérence entre la visualisation et la logique
+export const DEFAULT_ALGORITHMS: Algorithm[] = ALGO_DIAGRAMS.map(diagramToAlgorithm);
