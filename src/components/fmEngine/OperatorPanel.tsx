@@ -23,14 +23,12 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
         <FrequencyKnob 
         label="Frequency" 
         value={selectedOperator?.frequency ?? 0}
-        initial={selectedOperator?.frequency} 
         min={0} max={16} 
         onChange={val => updateOperator(opId, { frequency: val })}
         />
         <FineTuneKnob 
         label="Finetuning" 
         value={selectedOperator?.detune ?? 0}
-        initial={selectedOperator?.detune ?? 0} 
         min={-9} max={9} 
         onChange={val => updateOperator(opId, { detune: val })}
         />
@@ -44,7 +42,7 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
           onChange={(waveform) => updateOperator(opId, { waveform })}
         />
         <KeyboardTrackingSelect
-          value={selectedOperator?.keyboardTracking}
+          value={selectedOperator?.keyboardTracking ?? 1}
           onChange={(keyboardTracking) => updateOperator(opId, { keyboardTracking })}
         />
       </div>

@@ -2,14 +2,19 @@ import styled from 'styled-components';
 import OperatorPanel from '../components/fmEngine/OperatorPanel';
 import { FMSynthProvider } from '../components/fmEngine/FMSynthContext';
 import { FMAlgorithmSelector } from '../components/fmEngine/FMAlgorithmSelector';
-import { ModulationIndexes } from '../components/fmEngine/ModulationIndexes';
 import CarrierControls from '../components/fmEngine/CarrierControls';
 import { useCurrentPatch } from '../stores/patchStore';
+import ModulationIndexesEditor from '../components/fmEngine/ModulationIndexesEditor';
 
 const Row = styled.div`
   display: flex;
+  flex-wrap: wrap;
   height: auto;
   background: #1a202c;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 `;
 
 const OperatorGrid = styled.div`
@@ -30,7 +35,7 @@ export function PatchEditor() {
       <FMSynthProvider patch={currentPatch}>
         <Row>
           <FMAlgorithmSelector />
-          <ModulationIndexes />
+          <ModulationIndexesEditor algorithm={currentPatch.algorithm} />
         </Row>
 
         <CarrierControls />

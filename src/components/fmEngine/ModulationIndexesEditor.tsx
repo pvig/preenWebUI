@@ -6,26 +6,33 @@ import { useCurrentPatch, updateModulationAmount } from '../../stores/patchStore
 const EditorContainer = styled.div`
   background: #2d3748;
   border-radius: 8px;
-  padding: 15px;
-  width: 200px;
+  padding: 10px;
+  width: 100%;
+  max-width: 260px;
+  box-sizing: border-box;
   max-height: 400px;
   overflow-y: auto;
+  overflow-x: hidden;
   border: 1px solid #4a5568;
+
+  @media (max-width: 768px) {
+    max-width: none;
+  }
 `;
 
 const EditorTitle = styled.h3`
-  margin: 0 0 15px 0;
+  margin: 0 0 8px 0;
   color: #cbd5e0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
 `;
 
 const ModulationItem = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
   border-bottom: 1px solid #4a5568;
 
   &:last-child {
@@ -36,27 +43,34 @@ const ModulationItem = styled.div`
 `;
 
 const Label = styled.label`
+  display: inline-block;
+  flex: 0 0 95px;
   color: #a0aec0;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
+  line-height: 1.1;
   font-weight: 500;
+  white-space: nowrap;
 `;
 
 const SliderContainer = styled.div`
   display: flex;
+  flex: 1;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 `;
 
 const Slider = styled.input`
   flex: 1;
+  min-width: 0;
+  width: 100%;
   cursor: pointer;
 `;
 
 const ValueDisplay = styled.span`
   color: #63b3ed;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: bold;
-  min-width: 30px;
+  min-width: 20px;
   text-align: right;
 `;
 
@@ -64,7 +78,7 @@ interface ModulationIndexesEditorProps {
   algorithm: Algorithm;
 }
 
-export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = ({ algorithm }) => {
+export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = ({ algorithm: _algorithm }) => {
   const currentPatch = useCurrentPatch();
 
   // Collecte toutes les liaisons avec leurs indices à partir des opérateurs du patch
@@ -87,7 +101,7 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
   currentPatch.operators.forEach((op) => {
     op.target.forEach((targetLink, targetIndex) => {
       // Calculer l'index global de la liaison
-      let imIndex = 1;
+      let imIndex = 0;
       for (let i = 0; i < currentPatch.operators.indexOf(op); i++) {
         imIndex += currentPatch.operators[i].target.filter(tl =>
           currentPatch.operators.some(o => o.id === tl.id)

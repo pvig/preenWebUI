@@ -5,6 +5,7 @@ import { Algorithm } from '../../types/patch';
 const VisualizationSVG = styled.svg`
   width: 100%;
   height: 200px;
+  min-width: 200px;
 `;
 
  export const AlgorithmVisualization: React.FC<{ algorithm: Algorithm }> = ({ algorithm }) => {
@@ -84,7 +85,7 @@ const VisualizationSVG = styled.svg`
           .filter(targetLink => algorithm.ops.some(o => o.id === targetLink.id))
           .map((targetLink, targetIndex) => {
             // Calculer l'index global de la liaison pour générer le label IM
-            let imIndex = 1;
+            let imIndex = 0;
             for (let i = 0; i < opIndex; i++) {
               imIndex += algorithm.ops[i].target.filter(tl => algorithm.ops.some(o => o.id === tl.id)).length;
             }

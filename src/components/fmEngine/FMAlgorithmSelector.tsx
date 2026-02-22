@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 import { AlgorithmVisualization } from './AlgorithmVisualization';
-import ModulationIndexesEditor from './ModulationIndexesEditor';
 import { DEFAULT_ALGORITHMS } from '../../types/patch';
 import { useCurrentPatch, selectAlgorithm } from '../../stores/patchStore';
 
@@ -11,6 +10,7 @@ const SelectorContainer = styled.div`
   padding: 20px;
   background: #2d3748;
   border-radius: 8px;
+  min-width: 250px;
 `;
 
 const NavigationControls = styled.div`
@@ -51,39 +51,19 @@ const VisualizationWrapper = styled.div`
   position: relative;
   min-height: 220px;
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   align-items: flex-start;
 `;
 
 const VisualizationContainer = styled.div`
-  flex: 1;
+  flex: 1 1 260px;
+  min-width: 220px;
   background: #1a202c;
   border-radius: 8px;
   padding: 15px;
   position: relative;
   min-height: 220px;
-`;
-
-const CarriersIndicator = styled.div`
-  position: absolute;
-  bottom: 10px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-`;
-
-const CarrierBadge = styled.div`
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #68d391;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
 `;
 
 export const FMAlgorithmSelector = () => {
@@ -95,8 +75,6 @@ export const FMAlgorithmSelector = () => {
   }
 
   const currentIndex = DEFAULT_ALGORITHMS.findIndex(a => a.id === currentAlgorithm.id);
-  const carriers = currentAlgorithm.ops.filter(op => op.type === 'CARRIER');
-
   const handlePrevious = () => {
     const newIndex = (currentIndex - 1 + DEFAULT_ALGORITHMS.length) % DEFAULT_ALGORITHMS.length;
     selectAlgorithm(DEFAULT_ALGORITHMS[newIndex]);
@@ -137,7 +115,7 @@ export const FMAlgorithmSelector = () => {
         <VisualizationContainer>
           <AlgorithmVisualization algorithm={currentAlgorithm} />
         </VisualizationContainer>
-        <ModulationIndexesEditor algorithm={currentAlgorithm} />
+
       </VisualizationWrapper>
 
     </SelectorContainer>

@@ -1,5 +1,19 @@
 import React, { useRef } from "react";
 
+interface KnobBaseProps {
+  size?: number;
+  knobRadius?: number;
+  min?: number;
+  max?: number;
+  value: number;
+  onChange?: (value: number) => void;
+  color?: string;
+  backgroundColor?: string;
+  strokeColor?: string;
+  renderLabel?: (value: number) => React.ReactNode;
+  label?: string | null;
+}
+
 function KnobBase({
   size = 100,
   knobRadius = 20,
@@ -12,12 +26,12 @@ function KnobBase({
   strokeColor = "#ccc",
   renderLabel = (val: number) => val,
   label = null
-}) {
+}: KnobBaseProps) {
   const center = size / 2;
   const radius = knobRadius ?? (center - 10);
   const tickLength = 6;
   const isDragging = useRef(false);
-  const svgRef = useRef(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
 
   const START_ANGLE = -135;
   const END_ANGLE = 135;
@@ -91,7 +105,7 @@ function KnobBase({
   const pointerX = center + radius * Math.cos(angleRad);
   const pointerY = center + radius * Math.sin(angleRad);
 
-  const getTick = (deg) => {
+  const getTick = (deg: number) => {
     const rad = (deg - 90) * (Math.PI / 180);
     const outerX = center + radius * Math.cos(rad);
     const outerY = center + radius * Math.sin(rad);

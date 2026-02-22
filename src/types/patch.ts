@@ -32,6 +32,7 @@ export interface Operator {
   enabled: boolean;
   frequency: number;      // Fréquence en Hz ou ratio FM
   detune: number;      // Fréquence en Hz ou ratio FM
+  keyboardTracking: number;
   frequencyType: 'FIXED' | 'KEYBOARD'; // Suivi du clavier ou fréquence fixe
   waveform: WaveformType;
   amplitude: number;      // 0.0 à 1.0
@@ -195,6 +196,7 @@ export const DEFAULT_OPERATOR: Omit<Operator, 'id'> = {
   type: 'CARRIER',
   frequency: 440,
   detune: 0,
+  keyboardTracking: 1,
   frequencyType: 'KEYBOARD',
   waveform: 'SINE',
   amplitude: 100,
@@ -258,7 +260,7 @@ export const DEFAULT_ALGORITHMS: Algorithm[] = [
     name: "4 Modulator, 2 Carriers",
     ops: [
       createOperator(1, "CARRIER"),
-      createOperator(2, "MODULATOR", { target: [{ id: 1, im: 0 }, { id: 3, im: 0 }] }),
+      createOperator(2, "MODULATOR", { target: [{ id: 1, im: 0 }, { id: 3, im: 0 }, { id: 2, im: 0 }] }),
       createOperator(3, "CARRIER"),
       createOperator(4, "MODULATOR", { target: [{ id: 3, im: 0 }] }),
       createOperator(5, "MODULATOR", { target: [{ id: 4, im: 0 }] }),
