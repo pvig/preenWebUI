@@ -95,7 +95,7 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
         // Decay segment: attack à attack+16 max, et doit rester avant sustain
         return Math.max(attack.x, Math.min(newX, attack.x + 16, sustain.x));
       case 'sustain':
-        // Sustain segment: decay à decay+16 max, et doit rester avant release
+        // Sustain segment: decay à decay+16 max, et bloqué par release
         return Math.max(decay.x, Math.min(newX, decay.x + 16, release.x));
       case 'release':
         // Release segment: sustain à sustain+16 max
@@ -191,30 +191,24 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
         let newX = xScale.invert(event.x) - dragOffset.current.x;
         const newY = yScale.invert(event.y) - dragOffset.current.y;
 
-        // Application des contraintes
+        // Application des contraintes (chaque point est bloqué par le point suivant)
         newX = constrainXPosition(key, newX);
-        // Pas de limite supérieure absolue (les temps cumulatifs peuvent aller jusqu'à 64)
         const constrainedX = Math.max(0, newX);
         const constrainedY = Math.max(0, Math.min(100, newY));
 
-        // Mise à jour des points
+        // Mise à jour du point déplacé
         const pointIndex = ['attack', 'decay', 'sustain', 'release'].indexOf(key) + 1;
         currentPoints.current[pointIndex] = { x: constrainedX, y: constrainedY };
 
-        // Mise à jour visuelle
-        d3.select(this)
-          .attr('cx', xScale(constrainedX))
-          .attr('cy', yScale(constrainedY));
+        // Mise à jour visuelle de tous les points
+        ['attack', 'decay', 'sustain', 'release'].forEach((k, idx) => {
+          const pt = currentPoints.current[idx + 1];
+          circlesRef.current[k]
+            ?.attr('cx', xScale(pt.x))
+            .attr('cy', yScale(pt.y));
+        });
 
         lineRef.current?.datum(generateFullPath(currentPoints.current)).attr('d', lineGenerator);
-
-        // Préparation des nouvelles valeurs
-        const updates: Partial<AdsrState> = {};
-        if (key === 'attack') updates.attack = { time: constrainedX, level: constrainedY };
-        if (key === 'decay') updates.decay = { time: constrainedX, level: constrainedY };
-        if (key === 'sustain') updates.sustain = { time: constrainedX, level: constrainedY };
-        if (key === 'release') updates.release = { time: constrainedX, level: constrainedY };
-
 
       })
       .on('end', function () {
@@ -223,20 +217,13 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
         const key = d3.select(this).attr('data-key');
         d3.select(this).attr('fill', pointColors[key as keyof typeof pointColors]);
 
-
-        const updates: Partial<AdsrState> = {};
-        if (key === 'attack') {
-          updates.attack = { time: currentPoints.current[1].x, level: currentPoints.current[1].y };
-        }
-        if (key === 'decay') {
-          updates.decay = { time: currentPoints.current[2].x, level: currentPoints.current[2].y };
-        }
-        if (key === 'sustain') {
-          updates.sustain = { time: currentPoints.current[3].x, level: currentPoints.current[3].y };
-        }
-        if (key === 'release') {
-          updates.release = { time: currentPoints.current[4].x, level: currentPoints.current[4].y };
-        }
+        // Sauvegarder le point modifié
+        const updates: Partial<AdsrState> = {
+          attack: { time: currentPoints.current[1].x, level: currentPoints.current[1].y },
+          decay: { time: currentPoints.current[2].x, level: currentPoints.current[2].y },
+          sustain: { time: currentPoints.current[3].x, level: currentPoints.current[3].y },
+          release: { time: currentPoints.current[4].x, level: currentPoints.current[4].y }
+        };
         
         // Notification du changement
         requestAnimationFrame(() => {
