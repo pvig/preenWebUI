@@ -485,7 +485,7 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
     ],
     edges: [
       { from: "op2", to: "op1" },
-      { from: "op4", to: "op2" },
+      { from: "op4", to: "op3" },
       { from: "op5", to: "op4" },
       { from: "op5", to: "op5" },
     ],

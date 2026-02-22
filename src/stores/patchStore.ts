@@ -107,6 +107,20 @@ const initialState: EditorState = {
   }
 };
 
+/**
+ * Helper to safely update patch lastModified timestamp
+ */
+function updateLastModified(patch: Patch): void {
+  if (!patch.editorMetadata) {
+    patch.editorMetadata = {
+      lastModified: new Date(),
+      version: '1.0.0',
+    };
+  } else {
+    patch.editorMetadata.lastModified = new Date();
+  }
+}
+
 // Interface du store
 interface PatchStore extends EditorState {
   // algo change
@@ -203,7 +217,7 @@ export const usePatchStore = create<PatchStore>()(
         }
 
         state.isModified = true;
-        state.currentPatch.editorMetadata!.lastModified = new Date();
+        updateLastModified(state.currentPatch);
       }),
 
     // Actions pour les oscillateurs
@@ -213,7 +227,7 @@ export const usePatchStore = create<PatchStore>()(
         if (operator) {
           Object.assign(operator, changes);
           state.isModified = true;
-          state.currentPatch.editorMetadata!.lastModified = new Date();
+          updateLastModified(state.currentPatch);
         }
       }),
 
@@ -223,7 +237,7 @@ export const usePatchStore = create<PatchStore>()(
         if (operator) {
           operator.waveform = waveform;
           state.isModified = true;
-          state.currentPatch.editorMetadata!.lastModified = new Date();
+          updateLastModified(state.currentPatch);
         }
       }),
 
@@ -233,7 +247,7 @@ export const usePatchStore = create<PatchStore>()(
         if (operator) {
           operator.enabled = !operator.enabled;
           state.isModified = true;
-          state.currentPatch.editorMetadata!.lastModified = new Date();
+          updateLastModified(state.currentPatch);
         }
       }),
 
@@ -244,7 +258,7 @@ export const usePatchStore = create<PatchStore>()(
         if (operator) {
           Object.assign(operator.adsr, envelope);
           state.isModified = true;
-          state.currentPatch.editorMetadata!.lastModified = new Date();
+          updateLastModified(state.currentPatch);
         }
       }),
 
@@ -254,7 +268,7 @@ export const usePatchStore = create<PatchStore>()(
         if (operator) {
           operator.adsr = { ...DEFAULT_ADSR };
           state.isModified = true;
-          state.currentPatch.editorMetadata!.lastModified = new Date();
+          updateLastModified(state.currentPatch);
         }
       }),
 
@@ -268,7 +282,7 @@ export const usePatchStore = create<PatchStore>()(
           if (!existingMod) {
             sourceOsc.target.push({ id: targetId, im: amount });
             state.isModified = true;
-            state.currentPatch.editorMetadata!.lastModified = new Date();
+            updateLastModified(state.currentPatch);
           }
         }
       }),
@@ -281,7 +295,7 @@ export const usePatchStore = create<PatchStore>()(
             mod => mod.id !== targetId
           );
           state.isModified = true;
-          state.currentPatch.editorMetadata!.lastModified = new Date();
+          updateLastModified(state.currentPatch);
         }
       }),
 
@@ -293,7 +307,7 @@ export const usePatchStore = create<PatchStore>()(
           if (modulation) {
             modulation.im = Math.max(0, Math.min(100, amount));
             state.isModified = true;
-            state.currentPatch.editorMetadata!.lastModified = new Date();
+            updateLastModified(state.currentPatch);
           }
         }
       }),
@@ -303,14 +317,14 @@ export const usePatchStore = create<PatchStore>()(
       set((state) => {
         Object.assign(state.currentPatch.global, changes);
         state.isModified = true;
-        state.currentPatch.editorMetadata!.lastModified = new Date();
+        updateLastModified(state.currentPatch);
       }),
 
     updateEffects: (changes: Partial<GlobalEffects>) =>
       set((state) => {
         Object.assign(state.currentPatch.effects, changes);
         state.isModified = true;
-        state.currentPatch.editorMetadata!.lastModified = new Date();
+        updateLastModified(state.currentPatch);
       }),
 
     // Actions de l'éditeur
@@ -376,7 +390,7 @@ export const usePatchStore = create<PatchStore>()(
           Object.assign(targetOsc, params);
           targetOsc.id = id; // Garder l'ID original
           state.isModified = true;
-          state.currentPatch.editorMetadata!.lastModified = new Date();
+          updateLastModified(state.currentPatch);
         }
       }),
 
@@ -385,7 +399,7 @@ export const usePatchStore = create<PatchStore>()(
       set((state) => {
         state.isModified = modified;
         if (modified) {
-          state.currentPatch.editorMetadata!.lastModified = new Date();
+          updateLastModified(state.currentPatch);
         }
       }),
 

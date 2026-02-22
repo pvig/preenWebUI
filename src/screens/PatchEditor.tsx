@@ -9,6 +9,7 @@ import ModulationIndexesEditor from '../components/fmEngine/ModulationIndexesEdi
 const Row = styled.div`
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   height: auto;
   background: #1a202c;
 
@@ -20,6 +21,7 @@ const Row = styled.div`
 const OperatorGrid = styled.div`
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
 `;
 
 export function PatchEditor() {
@@ -37,7 +39,7 @@ export function PatchEditor() {
           <FMAlgorithmSelector />
           <ModulationIndexesEditor algorithm={currentPatch.algorithm} />
         </Row>
-
+        
         <CarrierControls />
 
         <Row>

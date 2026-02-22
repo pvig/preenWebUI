@@ -80,6 +80,7 @@ const VisualizationWrapper = styled.div`
   min-height: 220px;
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 20px;
   align-items: flex-start;
 `;

@@ -3,11 +3,12 @@ import KnobBase from '../knobs/KnobBase';
 import styled from 'styled-components';
 
 const ControlsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 20px;
   padding: 20px;
-  background: #2d3748;
+  background: #1a202c;
 `;
 
 const OperatorControl = styled.div`
@@ -16,7 +17,7 @@ const OperatorControl = styled.div`
   align-items: center;
   gap: 10px;
   padding: 15px;
-  background: #1a202c;
+  background: #2d3748;
   border-radius: 6px;
 `;
 
