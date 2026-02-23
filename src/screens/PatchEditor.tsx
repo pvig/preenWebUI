@@ -3,8 +3,9 @@ import OperatorPanel from '../components/fmEngine/OperatorPanel';
 import { FMSynthProvider } from '../components/fmEngine/FMSynthContext';
 import { FMAlgorithmSelector } from '../components/fmEngine/FMAlgorithmSelector';
 import CarrierControls from '../components/fmEngine/CarrierControls';
-import { useCurrentPatch } from '../stores/patchStore';
+import { useCurrentPatch, updateGlobal } from '../stores/patchStore';
 import ModulationIndexesEditor from '../components/fmEngine/ModulationIndexesEditor';
+import KnobBase from '../components/knobs/KnobBase';
 
 const Row = styled.div`
   display: flex;
@@ -24,6 +25,13 @@ const OperatorGrid = styled.div`
   justify-content: center;
 `;
 
+const GlobalKnobWrapper = styled.div`
+  @media (max-width: 768px) {
+    transform: scale(0.85);
+  }
+`;
+
+
 export function PatchEditor() {
 
   const currentPatch = useCurrentPatch();
@@ -32,12 +40,73 @@ export function PatchEditor() {
     return null;
   }
 
+  const globalKnobs = (
+    <>
+      <GlobalKnobWrapper>
+        <KnobBase
+          size={55}
+          min={0}
+          max={16}
+          step={1}
+          value={currentPatch.global.velocitySensitivity}
+          onChange={(val) =>
+            updateGlobal({ velocitySensitivity: Math.round(val) })
+          }
+          color="#FF9800"
+          backgroundColor="#2d3748"
+          strokeColor="#4a5568"
+          renderLabel={(v) => Math.round(v)}
+          label="Velocity"
+        />
+      </GlobalKnobWrapper>
+      <GlobalKnobWrapper>
+        {/* Note: Le nombre de voix n'est PAS récupéré lors du patch pull.
+            C'est un paramètre du Mixer State (global instrument), pas du Patch.
+            Sur PreenfM3, le NRPN [0,2] est réutilisé pour le Play Mode (Poly/Mono/Unison).
+            Valeur par défaut : 8 voix (à ajuster manuellement si besoin). */}
+        <KnobBase
+          size={55}
+          min={1}
+          max={16}
+          step={1}
+          value={currentPatch.global.polyphony}
+          onChange={(val) =>
+            updateGlobal({ polyphony: Math.round(val) })
+          }
+          color="#63B3ED"
+          backgroundColor="#2d3748"
+          strokeColor="#4a5568"
+          renderLabel={(v) => Math.round(v)}
+          label="Voices*"
+          title="Non récupéré du PreenfM3 (paramètre mixer). Ajuster manuellement."
+        />
+      </GlobalKnobWrapper>
+      <GlobalKnobWrapper>
+        <KnobBase
+          size={55}
+          min={0}
+          max={12}
+          step={1}
+          value={currentPatch.global.glideTime}
+          onChange={(val) =>
+            updateGlobal({ glideTime: Math.round(val) })
+          }
+          color="#9F7AEA"
+          backgroundColor="#2d3748"
+          strokeColor="#4a5568"
+          renderLabel={(v) => Math.round(v)}
+          label="Glide"
+        />
+      </GlobalKnobWrapper>
+    </>
+  );
+
   return (
     <div className="editor-container">
       <FMSynthProvider patch={currentPatch}>
         <Row>
           <FMAlgorithmSelector />
-          <ModulationIndexesEditor algorithm={currentPatch.algorithm} />
+          <ModulationIndexesEditor algorithm={currentPatch.algorithm} globalKnobs={globalKnobs} />
         </Row>
         
         <CarrierControls />

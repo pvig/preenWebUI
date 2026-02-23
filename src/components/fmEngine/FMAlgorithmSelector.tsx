@@ -11,23 +11,42 @@ const SelectorContainer = styled.div`
   background: #2d3748;
   border-radius: 8px;
   min-width: 250px;
+  max-width: 420px;
+  flex: 1;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    width: 100%;
+  }
 `;
 
 const NavigationControls = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const AlgorithmSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const NavButtonsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 `;
 
 const NavButton = styled.button`
-  width: 40px;
-  height: 40px;
-  margin:0 20px;
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
   background: #4a5568;
   color: white;
   border: none;
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -44,14 +63,16 @@ const NavButton = styled.button`
   }
 `;
 
+
+
 const AlgorithmSelect = styled.select`
-  flex: 1;
-  padding: 8px 12px;
+  width: 140px;
+  padding: 6px 10px;
   background: #1a202c;
   color: #cbd5e0;
   border: 2px solid #4a5568;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   outline: none;
@@ -125,33 +146,36 @@ export const FMAlgorithmSelector = () => {
     <SelectorContainer>
 
       <NavigationControls>
-        <NavButton
-          onClick={handlePrevious}
-          disabled={currentIndex === 0}
-          aria-label="Previous algorithm"
-        >
-          ←
-        </NavButton>
+        <AlgorithmSection>
+          <NavButtonsContainer>
+            <NavButton
+              onClick={handleNext}
+              disabled={currentIndex === DEFAULT_ALGORITHMS.length - 1}
+              aria-label="Next algorithm"
+            >
+              +
+            </NavButton>
+            <NavButton
+              onClick={handlePrevious}
+              disabled={currentIndex === 0}
+              aria-label="Previous algorithm"
+            >
+              -
+            </NavButton>
+          </NavButtonsContainer>
 
-        <AlgorithmSelect 
-          value={String(currentAlgorithm.id)} 
-          onChange={handleSelectChange}
-          aria-label="Select algorithm"
-        >
-          {DEFAULT_ALGORITHMS.map((algo) => (
-            <option key={String(algo.id)} value={String(algo.id)}>
-              {algo.name}
-            </option>
-          ))}
-        </AlgorithmSelect>
-
-        <NavButton
-          onClick={handleNext}
-          disabled={currentIndex === DEFAULT_ALGORITHMS.length - 1}
-          aria-label="Next algorithm"
-        >
-          →
-        </NavButton>
+          <AlgorithmSelect 
+            value={String(currentAlgorithm.id)} 
+            onChange={handleSelectChange}
+            aria-label="Select algorithm"
+          >
+            {DEFAULT_ALGORITHMS.map((algo) => (
+              <option key={String(algo.id)} value={String(algo.id)}>
+                {algo.name}
+              </option>
+            ))}
+          </AlgorithmSelect>
+        </AlgorithmSection>
       </NavigationControls>
 
       <VisualizationWrapper>

@@ -122,6 +122,7 @@ export interface Patch {
     polyphony: number;        // Nombre de voix de polyphonie
     glideTime: number;        // Portamento
     bendRange: number;        // Plage de pitch bend
+    velocitySensitivity: number; // Sensibilité globale à la vélocité (0-16)
   };
 
   // Effets globaux

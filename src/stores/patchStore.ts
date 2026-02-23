@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { WaveformType } from '../types/waveform';
+import { sendOperatorMix, sendOperatorPan } from '../midi/midiService';
 
 import {
   Patch,
@@ -45,7 +46,8 @@ const createDefaultPatch = (): Patch => ({
     fineTune: 0,
     polyphony: 8,
     glideTime: 0,
-    bendRange: 2
+    bendRange: 2,
+    velocitySensitivity: 8 // Valeur médiane 0-16
   },
 
   effects: {
@@ -363,7 +365,26 @@ export const usePatchStore = create<PatchStore>()(
     // Gestion des patches
     loadPatch: (patch: Patch) =>
       set((state) => {
-        state.currentPatch = { ...patch };
+        // Préserver amplitude/pan des opérateurs existants (Mixer State)
+        // car le patch dump (NRPN [127,127]) ne contient pas ces valeurs
+        const preservedMixPan = new Map<number, { amplitude: number; pan: number }>();
+        state.currentPatch.operators.forEach(op => {
+          preservedMixPan.set(op.id, { amplitude: op.amplitude, pan: op.pan });
+        });
+        
+        // Charger le nouveau patch
+        const newPatch = { ...patch };
+        
+        // Réappliquer les valeurs MIX/PAN préservées
+        newPatch.operators = newPatch.operators.map(op => {
+          const preserved = preservedMixPan.get(op.id);
+          if (preserved) {
+            return { ...op, amplitude: preserved.amplitude, pan: preserved.pan };
+          }
+          return op;
+        });
+        
+        state.currentPatch = newPatch;
         state.isModified = false;
         state.selectedOperator = 0;
         state.selectedParameter = null;
@@ -451,8 +472,24 @@ export const useOperator = (operatorId: number) => usePatchStore(state => {
   return currentPatch.operators.find(osc => osc.id === operatorId);
 });
 
-export const updateOperator = (operatorId: number, changes: Partial<Operator>) =>
+export const updateOperator = (operatorId: number, changes: Partial<Operator>, sendMidi: boolean = true) => {
+  console.log('🔧 updateOperator called:', { operatorId, changes, sendMidi });
+  
+  // Envoyer le MIDI si l'amplitude change (sauf si on reçoit depuis MIDI)
+  if (sendMidi && changes.amplitude !== undefined) {
+    console.log('🎛️ Amplitude change detected, calling sendOperatorMix...');
+    sendOperatorMix(operatorId, changes.amplitude);
+  }
+  
+  // Envoyer le MIDI si le pan change (sauf si on reçoit depuis MIDI)
+  if (sendMidi && changes.pan !== undefined) {
+    console.log('🎛️ Pan change detected, calling sendOperatorPan...');
+    sendOperatorPan(operatorId, changes.pan);
+  }
+  
+  // Mettre à jour le store
   usePatchStore.getState().updateOperator(operatorId, changes);
+};
 
 export const selectAlgorithm = (algorithm: Algorithm) =>
   usePatchStore.getState().selectAlgorithm(algorithm);
@@ -470,6 +507,9 @@ export const updateModulationAmount = (sourceId: number, targetId: number, amoun
 
 export const updateModulationVelo = (sourceId: number, targetId: number, velo: number) =>
   usePatchStore.getState().updateModulationVelo(sourceId, targetId, velo);
+
+export const updateGlobal = (changes: Partial<Patch['global']>) =>
+  usePatchStore.getState().updateGlobal(changes);
 
 export const useIsModified = () => usePatchStore(state => state.isModified);
 export const useActiveTab = () => usePatchStore(state => state.ui.activeTab);

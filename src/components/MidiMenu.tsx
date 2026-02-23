@@ -1,7 +1,7 @@
 import '../assets/css/MidiMenu.css';
 import { usePreenFM3Midi } from '../midi/usePreenFM3Midi';
 import { requestPatchDump } from '../midi/midiService';
-import { useCurrentPatch, usePatchStore } from '../stores/patchStore';
+import { useCurrentPatch, usePatchStore, updateOperator } from '../stores/patchStore';
 import { PreenFM3Parser } from '../midi/preenFM3Parser';
 import { useState, useRef } from 'react';
 
@@ -51,14 +51,38 @@ export const MidiMenu = () => {
       // Ajouter au parser
       parserRef.current.addNRPN(nrpn);
       
+      // Intercepter les NRPN MIX/PAN et les appliquer directement
+      // (loadPatch() préservera ces valeurs automatiquement)
+      const paramIndex = (nrpn.paramMSB << 7) | nrpn.paramLSB;
+      const value = (nrpn.valueMSB << 7) | nrpn.valueLSB;
+      
+      // MIX: NRPN [0, 16+(n-1)*2] plage 0-100
+      // PAN: NRPN [0, 17+(n-1)*2] plage 0-200
+      if (nrpn.paramMSB === 0 && paramIndex >= 16 && paramIndex <= 27) {
+        const offset = paramIndex - 16;
+        const opNumber = Math.floor(offset / 2) + 1; // 1-6
+        
+        if (offset % 2 === 0) {
+          // MIX (indices pairs: 16, 18, 20, 22, 24, 26)
+          // Convertir 0-100 (NRPN) -> 0-127 (UI amplitude)
+          const amplitude = Math.round(value * 127 / 100);
+          console.log(`🎛️ MIX${opNumber} reçu: ${value} -> amplitude ${amplitude}`);
+          updateOperator(opNumber, { amplitude }, false); // sendMidi=false
+        } else {
+          // PAN (indices impairs: 17, 19, 21, 23, 25, 27)
+          // Convertir 0-200 (NRPN) -> -100 à +100 (UI pan)
+          const pan = value - 100;
+          console.log(`🎛️ PAN${opNumber} reçu: ${value} -> pan ${pan}`);
+          updateOperator(opNumber, { pan }, false); // sendMidi=false
+        }
+      }
+      
       // Mettre à jour l'affichage
       const stats = parserRef.current.getStats();
       setReceivedCount(stats.count);
       setReceivedName(stats.name);
       
       // Logger de manière plus lisible
-      const paramIndex = (nrpn.paramMSB << 7) | nrpn.paramLSB;
-      const value = (nrpn.valueMSB << 7) | nrpn.valueLSB;
       console.log(`📥 NRPN [${nrpn.paramMSB},${nrpn.paramLSB}] (idx=${paramIndex}) = [${nrpn.valueMSB},${nrpn.valueLSB}] (val=${value})`);
     });
 
@@ -68,11 +92,12 @@ export const MidiMenu = () => {
       parserRef.current.logAll();
       
       // Convertir les NRPN en Patch et charger dans le store
+      // Note: loadPatch() préserve automatiquement amplitude/pan des opérateurs existants
       try {
         const patch = parserRef.current.toPatch();
         console.log('✅ Patch converti:', patch);
         loadPatch(patch);
-        console.log('✅ Patch chargé dans l\'UI');
+        console.log('✅ Patch chargé dans l\'UI (avec MIX/PAN préservés)');
       } catch (error) {
         console.error('❌ Erreur lors de la conversion du patch:', error);
       }

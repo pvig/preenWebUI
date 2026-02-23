@@ -7,11 +7,13 @@ interface KnobBaseProps {
   max?: number;
   value: number;
   onChange?: (value: number) => void;
+  step?: number; // pas optionnel : si défini -> mode discret, sinon continu
   color?: string;
   backgroundColor?: string;
   strokeColor?: string;
   renderLabel?: (value: number) => React.ReactNode;
   label?: string | null;
+  title?: string; // Tooltip HTML natif
 }
 
 function KnobBase({
@@ -21,11 +23,13 @@ function KnobBase({
   max = 100,
   value = 0,
   onChange = (arg) => { console.log("arg", arg)},
+  step,
   color = "#000",
   backgroundColor = "#eee",
   strokeColor = "#ccc",
   renderLabel = (val: number) => val,
-  label = null
+  label = null,
+  title
 }: KnobBaseProps) {
   const center = size / 2;
   const radius = knobRadius ?? (center - 10);
@@ -67,7 +71,15 @@ function KnobBase({
     if (!svgRef.current) return; 
     const angle = getAngleFromEvent(e);
     const clampedAngle = Math.max(START_ANGLE, Math.min(END_ANGLE, angle));
-    onChange(valueForAngle(clampedAngle));
+    const rawValue = valueForAngle(clampedAngle);
+
+    // Mode discret si un pas est défini, sinon continu
+    const newValue =
+      step && step > 0
+        ? Math.round(rawValue / step) * step
+        : rawValue;
+
+    onChange(newValue);
   };
 
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -125,6 +137,7 @@ function KnobBase({
 
   return (
     <div
+      title={title}
       style={{
         position: "relative",
         width: size,

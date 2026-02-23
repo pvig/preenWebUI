@@ -60,16 +60,37 @@ export function setMidiChannel(channel: number) {
  * Send a Control Change message
  */
 export function sendCC(controller: number, value: number, channel: number = currentChannel) {
+  console.log('📨 sendCC called:', { controller, value, channel, hasOutput: !!midiOutput, outputName: midiOutput?.name });
+  
   if (!midiOutput) {
-    console.warn('No MIDI output selected');
+    console.warn('❌ No MIDI output selected - cannot send CC');
     return;
   }
   
   try {
-    midiOutput.sendControlChange(controller, value, { channels: channel });
-    console.log(`Sent CC ${controller} = ${value} on channel ${channel}`);
+    // Build MIDI CC message manually: [status, controller, value]
+    // Status byte: 0xB0 (CC on channel 1) + (channel - 1)
+    // Controller: 0-127
+    // Value: 0-127
+    const statusByte = 0xB0 + (channel - 1);
+    const midiMessage = [statusByte, controller & 0x7F, value & 0x7F];
+    
+    console.log('🎵 MIDI bytes:', midiMessage.map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+    console.log('🔌 Output object:', { id: midiOutput.id, name: midiOutput.name, manufacturer: midiOutput.manufacturer });
+    console.log('🔌 Output state:', { state: midiOutput.state, connection: midiOutput.connection, type: midiOutput.type });
+    
+    // Send raw MIDI message WITHOUT timestamp (send immediately)
+    try {
+      const result = midiOutput.send(midiMessage);
+      console.log('📬 send() returned:', result);
+    } catch (sendError) {
+      console.error('💥 send() threw error:', sendError);
+      throw sendError;
+    }
+    
+    console.log(`✅ Sent CC ${controller} = ${value} on channel ${channel} to ${midiOutput.name}`);
   } catch (err) {
-    console.error('Failed to send CC:', err);
+    console.error('❌ Failed to send CC:', err);
   }
 }
 
@@ -83,14 +104,20 @@ export function sendNRPN(nrpn: NRPNMessage, channel: number = currentChannel) {
   }
   
   try {
-    const opts = { channels: channel };
-    // NRPN MSB and LSB
-    midiOutput.sendControlChange(99, nrpn.paramMSB, opts);
-    midiOutput.sendControlChange(98, nrpn.paramLSB, opts);
+    // Build status byte for Control Change
+    const statusByte = 0xB0 + (channel - 1);
     
-    // Data MSB and LSB
-    midiOutput.sendControlChange(6, nrpn.valueMSB, opts);
-    midiOutput.sendControlChange(38, nrpn.valueLSB, opts);
+    console.log('📤 Sending NRPN via Output:', { id: midiOutput.id, name: midiOutput.name });
+    
+    // Send 4 CC messages using raw MIDI WITHOUT timestamp
+    // CC 99 = NRPN MSB
+    midiOutput.send([statusByte, 99, nrpn.paramMSB & 0x7F]);
+    // CC 98 = NRPN LSB
+    midiOutput.send([statusByte, 98, nrpn.paramLSB & 0x7F]);
+    // CC 6 = Data Entry MSB
+    midiOutput.send([statusByte, 6, nrpn.valueMSB & 0x7F]);
+    // CC 38 = Data Entry LSB
+    midiOutput.send([statusByte, 38, nrpn.valueLSB & 0x7F]);
     
     console.log(`Sent NRPN [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}] on channel ${channel}`);
   } catch (err) {
@@ -102,6 +129,9 @@ export function sendNRPN(nrpn: NRPNMessage, channel: number = currentChannel) {
  * Request full patch dump via NRPN
  */
 export function requestPatchDump(timbre: number = 0, channel: number = currentChannel) {
+  console.log('📥 requestPatchDump called:', { timbre, channel, hasOutput: !!midiOutput, outputName: midiOutput?.name });
+  console.log('🔌 Output object:', { id: midiOutput?.id, name: midiOutput?.name, manufacturer: midiOutput?.manufacturer });
+  
   const nrpn = {
     ...NRPN_COMMANDS.REQUEST_PATCH_DUMP,
     valueMSB: 0,
@@ -171,6 +201,62 @@ export function sendEnvelopeRelease(opNumber: number, value: number, channel: nu
   // Scale 0-32 (seconds) to 0-127
   const ccValue = Math.round(value * 4); // value * 127 / 32
   sendCC(PREENFM3_CC.ENV_REL_OP1 + (opNumber - 1), ccValue, channel);
+}
+
+/**
+ * Send operator mix/volume (amplitude) for operators 1-6
+ * Note: MIX is controlled via NRPN, not CC
+ * NRPN [0, 16+opNumber-1] for MIX1-MIX6
+ */
+export function sendOperatorMix(opNumber: number, value: number, channel: number = currentChannel) {
+  console.log('🎹 sendOperatorMix called:', { opNumber, value, channel, hasOutput: !!midiOutput });
+  
+  if (opNumber < 1 || opNumber > 6) {
+    console.warn('⚠️ Operator mix only available for operators 1-6, got:', opNumber);
+    return;
+  }
+  
+  // value is 0-127 in UI (amplitude)
+  // PreenfM3 MIX range: 0-100 (from official doc)
+  const scaledValue = Math.max(0, Math.min(100, Math.round(value * 100 / 127)));
+  
+  const nrpn: NRPNMessage = {
+    paramMSB: 0,
+    paramLSB: 16 + (opNumber - 1) * 2, // MIX1=16, MIX2=18, MIX3=20, etc. (interleaved with PAN)
+    valueMSB: 0,
+    valueLSB: scaledValue // Value 0-100 in LSB
+  };
+  
+  console.log('📤 Sending MIX via NRPN:', { opNumber, nrpn, scaledValue });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send operator pan (panoramique) for operators 1-6
+ * Note: PAN is controlled via NRPN, not CC
+ * NRPN [0, 17+(opNumber-1)*2] for PAN1-PAN6 (interleaved with MIX)
+ */
+export function sendOperatorPan(opNumber: number, value: number, channel: number = currentChannel) {
+  console.log('🎹 sendOperatorPan called:', { opNumber, value, channel, hasOutput: !!midiOutput });
+  
+  if (opNumber < 1 || opNumber > 6) {
+    console.warn('⚠️ Operator pan only available for operators 1-6, got:', opNumber);
+    return;
+  }
+  
+  // value is -100 (left) to 100 (right) in UI
+  // PreenfM3 PAN range: 0-200 (0=left, 100=center, 200=right from official doc)
+  const scaledValue = Math.max(0, Math.min(200, Math.round(value + 100)));
+  
+  const nrpn: NRPNMessage = {
+    paramMSB: 0,
+    paramLSB: 17 + (opNumber - 1) * 2, // PAN1=17, PAN2=19, PAN3=21, etc. (interleaved with MIX)
+    valueMSB: (scaledValue >> 7) & 0x7F, // Upper 7 bits (for values > 127)
+    valueLSB: scaledValue & 0x7F // Lower 7 bits
+  };
+  
+  console.log('📤 Sending PAN via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
+  sendNRPN(nrpn, channel);
 }
 
 /**
@@ -279,5 +365,20 @@ export function getMidiStatus() {
     input: midiInput?.name || null,
     output: midiOutput?.name || null,
     channel: currentChannel,
+    hasOutput: !!midiOutput,
+    hasInput: !!midiInput,
   };
+}
+
+/**
+ * Debug function to log current MIDI state
+ */
+export function logMidiStatus() {
+  const status = getMidiStatus();
+  console.log('🔍 MIDI Status:', status);
+  console.log('  WebMIDI enabled:', status.enabled);
+  console.log('  Input:', status.input);
+  console.log('  Output:', status.output);
+  console.log('  Channel:', status.channel);
+  return status;
 }

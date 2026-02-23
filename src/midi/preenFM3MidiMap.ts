@@ -167,6 +167,15 @@ export const PREENFM3_CC = {
  * - CC 98: Parameter LSB
  * - CC 6: Value MSB
  * - CC 38: Value LSB
+ * 
+ * Global parameters (MSB=0):
+ * - LSB 0: Algorithm (0-31 for 32 algorithms)
+ * - LSB 1: Velocity (0-16)
+ * - LSB 2: Voice (0-16, number of voices for current instrument)
+ * - LSB 3: Glide (0-10)
+ * - LSB 4-15: IM1-IM6 and velocities (see preenFM3Parser.ts)
+ * 
+ * Source: https://ixox.fr/preenfm2/preenfm/midi/
  */
 export interface NRPNMessage {
   paramMSB: number;  // CC 99

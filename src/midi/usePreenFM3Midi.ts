@@ -19,6 +19,7 @@ import {
   onNRPN,
   onSysEx,
   getMidiStatus,
+  logMidiStatus,
 } from './midiService';
 import type { NRPNMessage } from './preenFM3MidiMap';
 
@@ -228,6 +229,7 @@ export function usePreenFM3Midi() {
     
     // Utility
     getStatus: getMidiStatus,
+    logStatus: logMidiStatus,
   };
 }
 

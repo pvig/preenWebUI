@@ -222,9 +222,17 @@ export class PreenFM3Parser {
       });
     });
     
-    // Paramètres globaux
-    const glide = this.getValue(0, 3) ?? 0; // Index 3
-    const voices = this.getValue(0, 2) ?? 8; // Index 2
+    // Paramètres globaux (NRPN MSB=0)
+    const velocity = this.getValue(0, 1) ?? 8; // Index 1: Velocity (0-16)
+    const glide = this.getValue(0, 3) ?? 0; // Index 3: Glide (0-10)
+    
+    // NOTE IMPORTANTE: Le nombre de voix n'est PAS transmis lors du patch dump sur PreenfM3
+    // - Sur PreenfM2: NRPN [0,2] = numberOfVoices (1-16)
+    // - Sur PreenfM3: Le MÊME NRPN est réutilisé pour Play Mode (Poly/Mono/Unison)
+    // - Le patch dump (NRPN [127,127]) N'INCLUT PAS le Mixer State (volume, pan, voices)
+    // - L'éditeur officiel ne récupère pas non plus ce paramètre
+    // Solution: Valeur par défaut 8 voix (à ajuster manuellement dans l'UI)
+    const voices = this.getValue(0, 2) ?? 8;
     
     // Créer le patch complet
     const patch: Patch = {
@@ -241,6 +249,7 @@ export class PreenFM3Parser {
         polyphony: voices,
         glideTime: glide,
         bendRange: 2,
+        velocitySensitivity: velocity,
       },
       effects: {
         reverb: { enabled: false, room: 0.5, damp: 0.5, level: 0.3 },

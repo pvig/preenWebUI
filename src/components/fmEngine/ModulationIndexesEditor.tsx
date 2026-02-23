@@ -7,26 +7,57 @@ import { ALGO_DIAGRAMS } from '../../algo/algorithms.static';
 import KnobBase from '../knobs/KnobBase';
 
 const EditorContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
   background: #2d3748;
   border-radius: 8px;
-  padding: 8px;
-  width: 100%;
-  max-width: 400px;
+  min-width: 250px;
+  max-width: 420px;
+  flex: 1;
   box-sizing: border-box;
-  max-height: 400px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  border: 1px solid #4a5568;
 
   @media (max-width: 768px) {
-    max-width: none;
+    max-width: 100%;
+    width: 100%;
   }
 `;
 
-const EditorTitle = styled.h3`
-  margin: 0 0 6px 0;
+const HeaderSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const GlobalKnobsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-left: auto;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+    margin-left: 0;
+    flex: 1;
+    justify-content: space-evenly;
+  }
+`;
+
+const ModulationList = styled.div`
+  background: #1a202c;
+  border-radius: 8px;
+  padding: 15px;
+  min-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+`;
+
+const ModulationListTitle = styled.h4`
+  margin: 0 0 12px 0;
   color: #cbd5e0;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
 `;
 
@@ -92,9 +123,10 @@ const KnobLabel = styled.span`
 
 interface ModulationIndexesEditorProps {
   algorithm: Algorithm;
+  globalKnobs?: React.ReactNode;
 }
 
-export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = ({ algorithm }) => {
+export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = ({ algorithm, globalKnobs }) => {
   const currentPatch = useCurrentPatch();
   const { setHighlightedLink } = useFMSynthContext();
 
@@ -114,8 +146,17 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
   if (!currentPatch || !currentPatch.operators) {
     return (
       <EditorContainer>
-        <EditorTitle>Index de Modulation</EditorTitle>
-        <p style={{ color: '#718096', fontSize: '0.85rem' }}>Pas de patch</p>
+        {globalKnobs && (
+          <HeaderSection>
+            <GlobalKnobsContainer>
+              {globalKnobs}
+            </GlobalKnobsContainer>
+          </HeaderSection>
+        )}
+        <ModulationList>
+          <ModulationListTitle>Index de Modulation</ModulationListTitle>
+          <p style={{ color: '#718096', fontSize: '0.85rem', margin: 0 }}>Pas de patch</p>
+        </ModulationList>
       </EditorContainer>
     );
   }
@@ -161,16 +202,33 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
   if (modulationLinks.length === 0) {
     return (
       <EditorContainer>
-        <EditorTitle>Index de Modulation</EditorTitle>
-        <p style={{ color: '#718096', fontSize: '0.85rem' }}>Aucune liaison</p>
+        {globalKnobs && (
+          <HeaderSection>
+            <GlobalKnobsContainer>
+              {globalKnobs}
+            </GlobalKnobsContainer>
+          </HeaderSection>
+        )}
+        <ModulationList>
+          <ModulationListTitle>Index de Modulation</ModulationListTitle>
+          <p style={{ color: '#718096', fontSize: '0.85rem', margin: 0 }}>Aucune liaison</p>
+        </ModulationList>
       </EditorContainer>
     );
   }
 
   return (
     <EditorContainer>
-      <EditorTitle>Index de Modulation</EditorTitle>
-      {modulationLinks.map((link) => {
+      {globalKnobs && (
+        <HeaderSection>
+          <GlobalKnobsContainer>
+            {globalKnobs}
+          </GlobalKnobsContainer>
+        </HeaderSection>
+      )}
+      <ModulationList>
+        <ModulationListTitle>Index de Modulation</ModulationListTitle>
+        {modulationLinks.map((link) => {
         const isFeedback = link.sourceId === link.targetId;
         
         let label: string;
@@ -223,7 +281,8 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
             </KnobsContainer>
           </ModulationItem>
         );
-      })}
+        })}
+      </ModulationList>
     </EditorContainer>
   );
 };
