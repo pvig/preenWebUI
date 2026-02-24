@@ -241,7 +241,7 @@ export class PreenFM3Parser {
       program: 0,
       algorithm,
       operators,
-      modulationMatrix: [],
+      modulationMatrix: this.parseModulationMatrix(),
       global: {
         volume: 0.8,
         transpose: 0,
@@ -277,6 +277,160 @@ export class PreenFM3Parser {
     };
     
     return patch;
+  }
+
+  /**
+   * Parser la matrice de modulation depuis les données NRPN
+   * Structure documentée: 3 paramètres par ligne (Source, Multiplier, Destination)
+   * MAIS le preenfm2Controller montre 2 destinations, donc il y a probablement un 4ème paramètre
+   * Lignes 1-3: MSB=0, LSB=116 + (ligne-1)*4
+   * Lignes 4-12: MSB=1, LSB=(ligne-4)*4
+   */
+  private parseModulationMatrix(): Array<{
+    source: string;
+    destination1: string;
+    destination2: string;
+    amount: number;
+  }> {
+    const matrix: Array<{
+      source: string;
+      destination1: string;
+      destination2: string;
+      amount: number;
+    }> = [];
+
+    // Mapping des sources (SourceEnum du firmware PreenFM3)
+    const sourceNames = [
+      'None',          // 0 - MATRIX_SOURCE_NONE
+      'LFO 1',         // 1 - MATRIX_SOURCE_LFO1
+      'LFO 2',         // 2 - MATRIX_SOURCE_LFO2
+      'LFO 3',         // 3 - MATRIX_SOURCE_LFO3
+      'LFOEnv1',       // 4 - MATRIX_SOURCE_LFOENV1
+      'LFOEnv2',       // 5 - MATRIX_SOURCE_LFOENV2
+      'LFOSeq1',       // 6 - MATRIX_SOURCE_LFOSEQ1
+      'LFOSeq2',       // 7 - MATRIX_SOURCE_LFOSEQ2
+      'Modwheel',      // 8 - MATRIX_SOURCE_MODWHEEL
+      'Pitchbend',     // 9 - MATRIX_SOURCE_PITCHBEND
+      'Aftertouch',    // 10 - MATRIX_SOURCE_AFTERTOUCH
+      'Velocity',      // 11 - MATRIX_SOURCE_VELOCITY
+      'Note1',         // 12 - MATRIX_SOURCE_NOTE1
+      'CC1',           // 13 - MATRIX_SOURCE_CC1
+      'CC2',           // 14 - MATRIX_SOURCE_CC2
+      'CC3',           // 15 - MATRIX_SOURCE_CC3
+      'CC4',           // 16 - MATRIX_SOURCE_CC4
+      'Note2',         // 17 - MATRIX_SOURCE_NOTE2
+      'Breath',        // 18 - MATRIX_SOURCE_BREATH
+      'MPE Slide',     // 19 - MATRIX_SOURCE_MPESLIDE
+      'Random',        // 20 - MATRIX_SOURCE_RANDOM
+      'Poly AT',       // 21 - MATRIX_SOURCE_POLYPHONIC_AFTERTOUCH
+      'User CC1',      // 22 - MATRIX_SOURCE_USER_CC1
+      'User CC2',      // 23 - MATRIX_SOURCE_USER_CC2
+      'User CC3',      // 24 - MATRIX_SOURCE_USER_CC3
+      'User CC4',      // 25 - MATRIX_SOURCE_USER_CC4
+      'PB MPE',        // 26 - MATRIX_SOURCE_PITCHBEND_MPE
+      'AT MPE',        // 27 - MATRIX_SOURCE_AFTERTOUCH_MPE
+    ];
+
+    // Mapping des destinations (DestinationEnum du firmware PreenFM3)
+    const destNames = [
+      'None',          // 0 - DESTINATION_NONE
+      'Gate',          // 1 - MAIN_GATE
+      'IM1',           // 2 - INDEX_MODULATION1
+      'IM2',           // 3 - INDEX_MODULATION2
+      'IM3',           // 4 - INDEX_MODULATION3
+      'IM4',           // 5 - INDEX_MODULATION4
+      'IM*',           // 6 - INDEX_ALL_MODULATION
+      'Mix1',          // 7 - MIX_OSC1
+      'Pan1',          // 8 - PAN_OSC1
+      'Mix2',          // 9 - MIX_OSC2
+      'Pan2',          // 10 - PAN_OSC2
+      'Mix3',          // 11 - MIX_OSC3
+      'Pan3',          // 12 - PAN_OSC3
+      'Mix4',          // 13 - MIX_OSC4
+      'Pan4',          // 14 - PAN_OSC4
+      'Mix*',          // 15 - ALL_MIX
+      'Pan*',          // 16 - ALL_PAN
+      'o1 Fq',         // 17 - OSC1_FREQ
+      'o2 Fq',         // 18 - OSC2_FREQ
+      'o3 Fq',         // 19 - OSC3_FREQ
+      'o4 Fq',         // 20 - OSC4_FREQ
+      'o5 Fq',         // 21 - OSC5_FREQ
+      'o6 Fq',         // 22 - OSC6_FREQ
+      'o* Fq',         // 23 - ALL_OSC_FREQ
+      'Env1 A',        // 24 - ENV1_ATTACK
+      'Env2 A',        // 25 - ENV2_ATTACK
+      'Env3 A',        // 26 - ENV3_ATTACK
+      'Env4 A',        // 27 - ENV4_ATTACK
+      'Env5 A',        // 28 - ENV5_ATTACK
+      'Env6 A',        // 29 - ENV6_ATTACK
+      'Env* A',        // 30 - ALL_ENV_ATTACK
+      'Env* R',        // 31 - ALL_ENV_RELEASE
+      'Mtx1 x',        // 32 - MTX1_MUL
+      'Mtx2 x',        // 33 - MTX2_MUL
+      'Mtx3 x',        // 34 - MTX3_MUL
+      'Mtx4 x',        // 35 - MTX4_MUL
+      'Lfo1 F',        // 36 - LFO1_FREQ
+      'Lfo2 F',        // 37 - LFO2_FREQ
+      'Lfo3 F',        // 38 - LFO3_FREQ
+      'Env2 S',        // 39 - LFOENV2_SILENCE
+      'Seq1 G',        // 40 - LFOSEQ1_GATE
+      'Seq2 G',        // 41 - LFOSEQ2_GATE
+      'Flt1 P1',       // 42 - FILTER1_PARAM1
+      'o* FqH',        // 43 - ALL_OSC_FREQ_HARM
+      'Env* D',        // 44 - ALL_ENV_DECAY
+      'EnvM A',        // 45 - ALL_ENV_ATTACK_MODULATOR
+      'EnvM D',        // 46 - ALL_ENV_DECAY_MODULATOR
+      'EnvM R',        // 47 - ALL_ENV_RELEASE_MODULATOR
+      'Mtx FB',        // 48 - MTX_DEST_FEEDBACK
+      'Flt1 P2',       // 49 - FILTER1_PARAM2
+      'Flt1 G',        // 50 - FILTER1_AMP
+      'Flt2 P1',       // 51 - FILTER2_PARAM1
+      'Flt2 P2',       // 52 - FILTER2_PARAM2
+      'Flt2 G',        // 53 - FILTER2_AMP
+    ];
+
+    for (let row = 0; row < 12; row++) {
+      let msb: number, lsbBase: number;
+
+      if (row < 3) {
+        // Lignes 1-3: MSB=0, LSB=116 + row*4
+        msb = 0;
+        lsbBase = 116 + row * 4;
+      } else {
+        // Lignes 4-12: MSB=1, LSB=(row-3)*4
+        msb = 1;
+        lsbBase = (row - 3) * 4;
+      }
+
+      // Lire les 4 paramètres possibles de la ligne
+      const sourceValue = this.getValue(msb, lsbBase) ?? 0;
+      const multiplierValue = this.getValue(msb, lsbBase + 1) ?? 1000; // 1000 = 0.0
+      const dest1Value = this.getValue(msb, lsbBase + 2) ?? 0;
+      const dest2Value = this.getValue(msb, lsbBase + 3) ?? 0; // Peut-être non transmis
+
+      // Debug
+      if (row === 0 && (sourceValue !== 0 || multiplierValue !== 1000 || dest1Value !== 0)) {
+        console.log(`Matrix Row 1 NRPN: MSB=${msb}, LSB=${lsbBase}`);
+        console.log(`  Source=${sourceValue}, Mult=${multiplierValue}, Dest1=${dest1Value}, Dest2=${dest2Value}`);
+      }
+
+      // Convertir les valeurs
+      const source = sourceNames[sourceValue] || `Unknown(${sourceValue})`;
+      const destination1 = destNames[dest1Value] || `Unknown(${dest1Value})`;
+      const destination2 = destNames[dest2Value] || 'None';
+      
+      // Multiplier: 0=-10.0, 1000=0.0, 2000=10.0
+      const amount = (multiplierValue - 1000) / 100;
+
+      matrix.push({
+        source,
+        destination1,
+        destination2,
+        amount,
+      });
+    }
+
+    return matrix;
   }
 }
 

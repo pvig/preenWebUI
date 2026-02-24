@@ -13,7 +13,8 @@ import {
   DEFAULT_OPERATOR,
   DEFAULT_ADSR,
   DEFAULT_ALGORITHMS,
-  Algorithm
+  Algorithm,
+  ModulationMatrixRow
 } from '../types/patch';
 import {
   AdsrState,
@@ -38,7 +39,12 @@ const createDefaultPatch = (): Patch => ({
     frequency: i === 0 ? 8 : 8 * (i + 1) // Fréquences harmoniques
   })),
 
-  modulationMatrix: [],
+  modulationMatrix: Array(12).fill(null).map(() => ({
+    source: 'None',
+    destination1: 'None',
+    destination2: 'None',
+    amount: 0
+  })),
 
   global: {
     volume: 0.8,
@@ -142,6 +148,9 @@ interface PatchStore extends EditorState {
   removeModulation: (sourceId: number, targetId: number) => void;
   updateModulationAmount: (sourceId: number, targetId: number, amount: number) => void;
   updateModulationVelo: (sourceId: number, targetId: number, velo: number) => void;
+
+  // Actions pour la matrice de modulation
+  updateModulationMatrixRow: (rowIndex: number, changes: Partial<ModulationMatrixRow>) => void;
 
   // Actions globales
   updateGlobal: (changes: Partial<Patch['global']>) => void;
@@ -328,6 +337,16 @@ export const usePatchStore = create<PatchStore>()(
         }
       }),
 
+    // Actions pour la matrice de modulation
+    updateModulationMatrixRow: (rowIndex: number, changes: Partial<ModulationMatrixRow>) =>
+      set((state) => {
+        if (rowIndex >= 0 && rowIndex < state.currentPatch.modulationMatrix.length) {
+          Object.assign(state.currentPatch.modulationMatrix[rowIndex], changes);
+          state.isModified = true;
+          updateLastModified(state.currentPatch);
+        }
+      }),
+
     // Actions globales
     updateGlobal: (changes: Partial<Patch['global']>) =>
       set((state) => {
@@ -507,6 +526,9 @@ export const updateModulationAmount = (sourceId: number, targetId: number, amoun
 
 export const updateModulationVelo = (sourceId: number, targetId: number, velo: number) =>
   usePatchStore.getState().updateModulationVelo(sourceId, targetId, velo);
+
+export const updateModulationMatrixRow = (rowIndex: number, changes: Partial<ModulationMatrixRow>) =>
+  usePatchStore.getState().updateModulationMatrixRow(rowIndex, changes);
 
 export const updateGlobal = (changes: Partial<Patch['global']>) =>
   usePatchStore.getState().updateGlobal(changes);

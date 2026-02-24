@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PatchEditor } from './screens/PatchEditor';
-import { MatrixEditor } from './screens/MatrixEditor';
+import { ModulationsEditor } from './screens/modulationsEditor';
 import { EffectsEditor } from './screens/EffectsEditor';
 import { PatchLibrary } from './screens/PatchLibrary';
 import { MidiMenu } from './components/MidiMenu';
@@ -32,7 +32,7 @@ export default function App() {
 
       <main>
         {currentScreen === 'patch' && <PatchEditor />}
-        {currentScreen === 'matrix' && <MatrixEditor />}
+        {currentScreen === 'matrix' && <ModulationsEditor />}
         {currentScreen === 'effects' && <EffectsEditor />}
         {currentScreen === 'library' && <PatchLibrary />}
       </main>

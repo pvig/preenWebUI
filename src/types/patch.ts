@@ -15,6 +15,13 @@ export interface ModulationLink {
   modulationIndexVelo: number; // Sensibilité à la vélocité (0-100)
 }
 
+export interface ModulationMatrixRow {
+  source: string;        // Source de modulation (e.g., 'LFO 1', 'Aftertouch', etc.)
+  destination1: string;  // Première destination
+  destination2: string;  // Deuxième destination
+  amount: number;        // Montant/Multiplier (-10.0 to 10.0)
+}
+
 export interface LFO {
   shape: WaveformType;
   frequency: number;
@@ -107,12 +114,8 @@ export interface Patch {
   // Oscillateurs (généralement 4 ou 6 selon le modèle PreenFM)
   operators: Operator[];
 
-  // Matrice de modulation globale
-  modulationMatrix: {
-    source: string;
-    destination: string;
-    amount: number;
-  }[];
+  // Matrice de modulation globale (12 lignes)
+  modulationMatrix: ModulationMatrixRow[];
 
   // Paramètres globaux
   global: {
