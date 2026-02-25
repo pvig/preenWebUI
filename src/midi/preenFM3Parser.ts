@@ -7,7 +7,14 @@ import type { Patch } from '../types/patch';
 import type { NRPNMessage } from './preenFM3MidiMap';
 import { DEFAULT_ALGORITHMS, DEFAULT_LFO, DEFAULT_LFO_ENVELOPE, DEFAULT_STEP_SEQUENCER } from '../types/patch';
 import { WaveformType } from '../types/waveform';
-import { LFO_TYPES, nrpnToLfoFrequency, type LfoType } from '../types/lfo';
+import { 
+  nrpnToLfoFrequency, 
+  parseLfoShape,
+  parseLfoBias,
+  parseLfoKeysync,
+  LFO_BIAS_CENTER,
+  type LfoType 
+} from '../types/lfo';
 import type { LFO } from '../types/patch';
 
 /**
@@ -236,18 +243,6 @@ export class PreenFM3Parser {
     // Solution: Valeur par défaut 8 voix (à ajuster manuellement dans l'UI)
     const voices = this.getValue(0, 2) ?? 8;
     
-    // Debug: Afficher toutes les valeurs NRPN brutes pour LFO
-    console.log('🔍 DEBUG - Valeurs NRPN brutes [MSB=1]:');
-    for (let lsb = 40; lsb <= 51; lsb++) {
-      const value = this.getValue(1, lsb);
-      console.log(`  LSB ${lsb}: ${value} (0x${(value || 0).toString(16)})`);
-    }
-    console.log('  Phases:');
-    for (let lsb = 68; lsb <= 70; lsb++) {
-      const value = this.getValue(1, lsb);
-      console.log(`  LSB ${lsb}: ${value} (0x${(value || 0).toString(16)})`);
-    }
-    
     // Créer le patch complet
     const patch: Patch = {
       name,
@@ -268,8 +263,8 @@ export class PreenFM3Parser {
         const lfoBase = 40 + lfoIndex * 4; // 40, 44, 48
         
         // Shape (0-7 → LfoType)
-        const shapeValue = this.getValue(1, lfoBase) ?? 0;
-        const shape = LFO_TYPES[Math.min(shapeValue, 7)] || 'LFO_SIN';
+        const shapeRaw = this.getValue(1, lfoBase) ?? 0;
+        const shape = parseLfoShape(shapeRaw);
         
         // Frequency: detect sync mode based on NRPN value
         const freqRaw = this.getValue(1, lfoBase + 1) ?? 0;
@@ -291,26 +286,18 @@ export class PreenFM3Parser {
           midiClockMode = 'MC'; // Default MIDI clock mode (not used in Int mode)
         }
         
-        // Bias (0-200 → -1.0 to +1.0, centered on 100 = 0)
-        const biasRaw = this.getValue(1, lfoBase + 2) ?? 100; // Default to center
-        const bias = (biasRaw - 100) / 100; // Convert to -1.0 to +1.0 range
+        // Bias (0-200 → -1.0 to +1.0)
+        const biasRaw = this.getValue(1, lfoBase + 2) ?? LFO_BIAS_CENTER;
+        const bias = parseLfoBias(biasRaw);
         
-        // Keysync: NRPN 0 = "Off", NRPN 1-1601 = 0.0-16.0
-        // Formula: floatValue = (nrpnValue × 0.01) - 0.01
+        // Keysync (0 = 'Off', 1-1601 = 0.0-16.0)
         const keysyncRaw = this.getValue(1, lfoBase + 3) ?? 0;
-        let keysync: 'Off' | number;
-        if (keysyncRaw === 0) {
-          keysync = 'Off';
-        } else {
-          const keysyncFloat = (keysyncRaw * 0.01) - 0.01;
-          // Clamp to 0.0-16.0 range and round to 2 decimals
-          keysync = Math.max(0, Math.min(16, Math.round(keysyncFloat * 100) / 100));
-        }
+        const keysync = parseLfoKeysync(keysyncRaw);
         
         // Phase (0-16383 → 0-360) - stored separately at LSB 68-70
         const phase = this.getScaledValue(1, 68 + lfoIndex, 0, 360);
         
-        const lfo = {
+        return {
           shape,
           syncMode,
           frequency,
@@ -319,24 +306,6 @@ export class PreenFM3Parser {
           bias,
           keysync
         };
-        
-        console.log(`🎛️ LFO${lfoIndex + 1} parsed:`, {
-          shape,
-          syncMode,
-          frequency: syncMode === 'Int' ? frequency.toFixed(2) : midiClockMode,
-          phase: phase.toFixed(2),
-          bias: bias.toFixed(2),
-          keysync: keysync === 'Off' ? 'Off' : keysync.toFixed(2),
-          rawValues: {
-            shapeRaw: shapeValue,
-            freqRaw: freqRaw,
-            biasRaw: biasRaw,
-            keysyncRaw: keysyncRaw,
-            phaseRaw: this.getValue(1, 68 + lfoIndex)
-          }
-        });
-        
-        return lfo;
       }) as [LFO, LFO, LFO],
       
       // TODO: LFO Envelopes and Step Sequencers
