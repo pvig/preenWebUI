@@ -17,6 +17,7 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [hoverInfo, setHoverInfo] = useState<{ key: string; time: number; level: number } | null>(null);
+  const maxSegmentSize = 16; // Limite fixe de 16 pour chaque segment
   const margin = { top: 20, right: 20, bottom: 10, left: 30 };
   const width = 250 - margin.left - margin.right;
   const height = 120 - margin.top - margin.bottom;
@@ -83,29 +84,30 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
   };
 
   // Contraint les positions X en fonction des autres points actuels
-  // Chaque segment (différence entre deux points consécutifs) est limité à 16
+  // Chaque segment (différence entre deux points consécutifs) est limité à maxSegmentSize
+  // qui peut être augmenté dynamiquement
   const constrainXPosition = (key: string, newX: number): number => {
     const [, attack, decay, sustain, release] = currentPoints.current;
 
     switch (key) {
       case 'attack':
-        // Attack segment: 0 à 16 max, et doit rester avant decay
-        return Math.max(0, Math.min(newX, 16, decay.x));
+        // Attack segment: 0 à maxSegmentSize max, et doit rester avant decay
+        return Math.max(0, Math.min(newX, maxSegmentSize, decay.x));
       case 'decay':
-        // Decay segment: attack à attack+16 max, et doit rester avant sustain
-        return Math.max(attack.x, Math.min(newX, attack.x + 16, sustain.x));
+        // Decay segment: attack à attack+maxSegmentSize max, et doit rester avant sustain
+        return Math.max(attack.x, Math.min(newX, attack.x + maxSegmentSize, sustain.x));
       case 'sustain':
-        // Sustain segment: decay à decay+16 max, et bloqué par release
-        return Math.max(decay.x, Math.min(newX, decay.x + 16, release.x));
+        // Sustain segment: decay à decay+maxSegmentSize max, et bloqué par release
+        return Math.max(decay.x, Math.min(newX, decay.x + maxSegmentSize, release.x));
       case 'release':
-        // Release segment: sustain à sustain+16 max
-        return Math.max(sustain.x, Math.min(newX, sustain.x + 16));
+        // Release segment: sustain à sustain+maxSegmentSize max
+        return Math.max(sustain.x, Math.min(newX, sustain.x + maxSegmentSize));
       default:
         return newX;
     }
   };
 
-  // Initialise et met à jour les points
+  // Initialise et met à jour les points  
   useEffect(() => {
     currentPoints.current = [
       { x: 0, y: 0 },
@@ -130,8 +132,9 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
     // L'échelle X s'adapte à la durée réelle de l'enveloppe
-    // Pas de limite max puisque les temps sont cumulatifs (peut aller jusqu'à 64)
-    const maxTime = Math.max(envelope.release.time, 1);
+    // Ajoute une petite marge pour permettre l'extension
+    const actualMaxTime = envelope.release.time;
+    const maxTime = Math.max(actualMaxTime * 1.15, actualMaxTime + 2, 1);
     const xScale = d3.scaleLinear().domain([0, maxTime]).range([0, width]);
     const yScale = d3.scaleLinear().domain([100, 0]).range([0, height]);
 
@@ -191,14 +194,77 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
         let newX = xScale.invert(event.x) - dragOffset.current.x;
         const newY = yScale.invert(event.y) - dragOffset.current.y;
 
-        // Application des contraintes (chaque point est bloqué par le point suivant)
-        newX = constrainXPosition(key, newX);
-        const constrainedX = Math.max(0, newX);
+        // Application des contraintes avec possibilité de pousser les points suivants
+        // maxSegmentSize est fixé à 16 pour tous les segments
+        const [, a, d, s, r] = currentPoints.current;
+        
+        // Contraindre la nouvelle position
+        newX = Math.max(0, newX);
         const constrainedY = Math.max(0, Math.min(100, newY));
 
-        // Mise à jour du point déplacé
-        const pointIndex = ['attack', 'decay', 'sustain', 'release'].indexOf(key) + 1;
-        currentPoints.current[pointIndex] = { x: constrainedX, y: constrainedY };
+        // Logique de poussée des points suivants en cascade
+        switch (key) {
+          case 'attack': {
+            // Attack peut aller de 0 à maxSegmentSize (16)
+            let constrainedX = Math.min(newX, maxSegmentSize);
+            
+            // Si Attack pousse Decay, déplacer Decay en cascade
+            if (constrainedX > d.x) {
+              currentPoints.current[2].x = constrainedX;
+              
+              // Si Decay pousse maintenant Sustain, le déplacer aussi
+              if (currentPoints.current[2].x > s.x) {
+                currentPoints.current[3].x = currentPoints.current[2].x;
+                
+                // Si Sustain pousse maintenant Release, le déplacer aussi
+                if (currentPoints.current[3].x > r.x) {
+                  currentPoints.current[4].x = currentPoints.current[3].x;
+                }
+              }
+            }
+            
+            currentPoints.current[1] = { x: constrainedX, y: constrainedY };
+            break;
+          }
+          
+          case 'decay': {
+            // Decay peut aller de attack.x à attack.x + maxSegmentSize (16)
+            let constrainedX = Math.max(a.x, Math.min(newX, a.x + maxSegmentSize));
+            
+            // Si Decay pousse Sustain, déplacer Sustain en cascade
+            if (constrainedX > s.x) {
+              currentPoints.current[3].x = constrainedX;
+              
+              // Si Sustain pousse maintenant Release, le déplacer aussi
+              if (currentPoints.current[3].x > r.x) {
+                currentPoints.current[4].x = currentPoints.current[3].x;
+              }
+            }
+            
+            currentPoints.current[2] = { x: constrainedX, y: constrainedY };
+            break;
+          }
+          
+          case 'sustain': {
+            // Sustain peut aller de decay.x à decay.x + maxSegmentSize (16)
+            let constrainedX = Math.max(d.x, Math.min(newX, d.x + maxSegmentSize));
+            
+            // Si Sustain pousse Release, le déplacer
+            if (constrainedX > r.x) {
+              currentPoints.current[4].x = constrainedX;
+            }
+            
+            currentPoints.current[3] = { x: constrainedX, y: constrainedY };
+            break;
+          }
+          
+          case 'release': {
+            // Release peut aller de sustain.x à sustain.x + maxSegmentSize (16)
+            const constrainedX = Math.max(s.x, Math.min(newX, s.x + maxSegmentSize));
+            currentPoints.current[4] = { x: constrainedX, y: constrainedY };
+            break;
+          }
+        }
 
         // Mise à jour visuelle de tous les points
         ['attack', 'decay', 'sustain', 'release'].forEach((k, idx) => {
@@ -258,7 +324,7 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
         .call(dragHandler);
     });
 
-  }, [envelope]); // Rafraîchir quand n'importe quelle valeur change
+  }, [envelope]); // Rafraîchir quand l'enveloppe change
 
   return (
     <div>

@@ -192,9 +192,9 @@ export type GlobalParameter = keyof Patch['global'];
 
 export const DEFAULT_ADSR: AdsrState = {
   attack: { time: 0, level: 0 },
-  decay: { time: 3, level: 100 },
-  sustain: { time: 30, level: 30 },
-  release: { time: 100, level: 0 }
+  decay: { time: 1, level: 100 },
+  sustain: { time: 5, level: 30 },
+  release: { time: 10, level: 0 }
 };
 
 export const DEFAULT_OPERATOR: Omit<Operator, 'id'> = {
