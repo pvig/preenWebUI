@@ -1,6 +1,8 @@
 import { AdsrState, AdsrPoint } from './adsr';
 import { WaveformType } from './waveform.ts';
 import { ALGO_DIAGRAMS, type AlgoDiagram } from '../algo/algorithms.static';
+import { type LfoType, type MidiClockMode } from './lfo';
+import { type LFOEnvelope, type StepSequencer } from './modulation';
 
 // types/patch.ts
 
@@ -22,11 +24,16 @@ export interface ModulationMatrixRow {
   amount: number;        // Montant/Multiplier (-10.0 to 10.0)
 }
 
+export type LfoSyncMode = 'Int' | 'Ext';
+
 export interface LFO {
-  shape: WaveformType;
-  frequency: number;
-  amount: number;
-  destination: string; // 'FREQUENCY', 'AMPLITUDE', etc.
+  shape: LfoType;        // Type de forme d'onde (selon firmware PreenFM3)
+  syncMode: LfoSyncMode; // Mode de synchronisation (Int = internal 0-99.9 Hz, Ext = MIDI Clock)
+  frequency: number;     // Fréquence en Hz (0-99.9) si syncMode='Int'
+  midiClockMode: MidiClockMode; // Mode MIDI Clock si syncMode='Ext'
+  phase: number;         // Phase initiale (0-360)
+  bias: number;          // Offset/Bias (-1.0 to +1.0)
+  keysync: 'Off' | number; // Key sync: 'Off' ou 0.0-16.0 (délai de resync)
 }
 
 export interface Filter {
@@ -117,6 +124,15 @@ export interface Patch {
   // Matrice de modulation globale (12 lignes)
   modulationMatrix: ModulationMatrixRow[];
 
+  // LFOs (3 LFOs selon le PreenFM3) - optionnel pour compatibilité avec anciens patches
+  lfos?: [LFO, LFO, LFO];
+
+  // LFO Envelopes (2 enveloppes libres) - optionnel pour compatibilité
+  lfoEnvelopes?: [LFOEnvelope, LFOEnvelope];
+
+  // Step Sequencers (2 séquenceurs de pas) - optionnel pour compatibilité
+  stepSequencers?: [StepSequencer, StepSequencer];
+
   // Paramètres globaux
   global: {
     volume: number;           // Volume général
@@ -196,6 +212,19 @@ export const DEFAULT_ADSR: AdsrState = {
   sustain: { time: 5, level: 30 },
   release: { time: 10, level: 0 }
 };
+
+export const DEFAULT_LFO: LFO = {
+  shape: 'LFO_SIN',
+  syncMode: 'Int',
+  frequency: 5.0,
+  midiClockMode: 'MC',
+  phase: 0,
+  bias: 0,
+  keysync: 'Off'
+};
+
+// Ré-exporter les constantes de modulation
+export { DEFAULT_LFO_ENVELOPE, DEFAULT_STEP_SEQUENCER } from './modulation';
 
 export const DEFAULT_OPERATOR: Omit<Operator, 'id'> = {
   enabled: true,

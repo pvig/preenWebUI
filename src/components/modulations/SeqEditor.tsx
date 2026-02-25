@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import KnobBase from '../knobs/KnobBase';
+import { useStepSequencer, updateStepSequencer } from '../../stores/patchStore';
+import type { StepSeqGateMode, StepSeqDirection } from '../../types/modulation';
 
 const SeqContainer = styled.div`
   background: #2d3748;
@@ -23,11 +25,11 @@ const SeqTabs = styled.div`
   margin-bottom: 12px;
 `;
 
-const SeqTab = styled.button<{ active: boolean }>`
-  background: ${props => props.active ? '#4a5568' : '#1a202c'};
+const SeqTab = styled.button<{ $active: boolean }>`
+  background: ${props => props.$active ? '#4a5568' : '#1a202c'};
   border: none;
   border-radius: 4px;
-  color: ${props => props.active ? '#63b3ed' : '#a0aec0'};
+  color: ${props => props.$active ? '#63b3ed' : '#a0aec0'};
   padding: 6px 12px;
   font-size: 0.8rem;
   cursor: pointer;
@@ -46,9 +48,9 @@ const StepGrid = styled.div`
   margin-bottom: 12px;
 `;
 
-const Step = styled.div<{ active: boolean; value: number }>`
+const Step = styled.div<{ $active: boolean; value: number }>`
   height: ${props => 30 + (props.value * 0.4)}px;
-  background: ${props => props.active ? '#63b3ed' : '#4a5568'};
+  background: ${props => props.$active ? '#63b3ed' : '#4a5568'};
   border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s;
@@ -58,7 +60,7 @@ const Step = styled.div<{ active: boolean; value: number }>`
   justify-content: center;
   
   &:hover {
-    background: ${props => props.active ? '#4299e1' : '#718096'};
+    background: ${props => props.$active ? '#4299e1' : '#718096'};
   }
   
   &::after {
@@ -133,43 +135,47 @@ const ActionButton = styled.button`
  * Gère les 2 séquenceurs à pas (Step Sequencers) du PreenFM3
  */
 export const SeqEditor: React.FC = () => {
-  const [activeSeq, setActiveSeq] = useState<number>(1);
-  const [steps, setSteps] = useState<number[]>(Array(16).fill(50));
-  const [activeSteps, setActiveSteps] = useState<boolean[]>(Array(16).fill(true));
+  const [activeSeq, setActiveSeq] = useState<0 | 1>(0);
+  const seq = useStepSequencer(activeSeq);
 
   const handleStepClick = (index: number) => {
-    const newActiveSteps = [...activeSteps];
-    newActiveSteps[index] = !newActiveSteps[index];
-    setActiveSteps(newActiveSteps);
+    const newGate = [...seq.gate];
+    newGate[index] = !newGate[index];
+    updateStepSequencer(activeSeq, { gate: newGate });
   };
 
   const handleStepValueChange = (index: number, delta: number) => {
-    const newSteps = [...steps];
+    const newSteps = [...seq.steps];
     newSteps[index] = Math.max(0, Math.min(100, newSteps[index] + delta));
-    setSteps(newSteps);
+    updateStepSequencer(activeSeq, { steps: newSteps });
   };
 
   const randomizeSteps = () => {
-    setSteps(Array(16).fill(0).map(() => Math.floor(Math.random() * 101)));
+    const newSteps = Array(16).fill(0).map(() => Math.floor(Math.random() * 101));
+    updateStepSequencer(activeSeq, { steps: newSteps });
   };
 
   const clearSteps = () => {
-    setSteps(Array(16).fill(50));
-    setActiveSteps(Array(16).fill(true));
+    const newSteps = Array(16).fill(50);
+    const newGate = Array(16).fill(true);
+    updateStepSequencer(activeSeq, { steps: newSteps, gate: newGate });
   };
+
+  const gateModes: StepSeqGateMode[] = ['Gate', 'Trigger', 'Hold'];
+  const directions: StepSeqDirection[] = ['Forward', 'Backward', 'PingPong', 'Random'];
 
   return (
     <SeqContainer>
       <SeqTitle>Step Sequencer</SeqTitle>
       
       <SeqTabs>
-        {[1, 2].map((seqNum) => (
+        {([0, 1] as const).map((seqNum) => (
           <SeqTab
             key={seqNum}
-            active={activeSeq === seqNum}
+            $active={activeSeq === seqNum}
             onClick={() => setActiveSeq(seqNum)}
           >
-            Seq {seqNum}
+            Seq {seqNum + 1}
           </SeqTab>
         ))}
       </SeqTabs>
@@ -180,10 +186,10 @@ export const SeqEditor: React.FC = () => {
       </ButtonGroup>
 
       <StepGrid>
-        {steps.map((value, index) => (
+        {seq.steps.map((value, index) => (
           <Step
             key={index}
-            active={activeSteps[index]}
+            $active={seq.gate[index]}
             value={value}
             onClick={() => handleStepClick(index)}
             onWheel={(e) => {
@@ -202,8 +208,8 @@ export const SeqEditor: React.FC = () => {
             min={0}
             max={100}
             step={0.1}
-            value={50}
-            onChange={(val) => console.log('BPM:', val)}
+            value={seq.bpm}
+            onChange={(bpm) => updateStepSequencer(activeSeq, { bpm })}
             color="#9F7AEA"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
@@ -218,8 +224,8 @@ export const SeqEditor: React.FC = () => {
             min={1}
             max={16}
             step={1}
-            value={16}
-            onChange={(val) => console.log('Steps:', val)}
+            value={seq.length}
+            onChange={(length) => updateStepSequencer(activeSeq, { length })}
             color="#48BB78"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
@@ -230,28 +236,25 @@ export const SeqEditor: React.FC = () => {
 
         <ControlGroup>
           <ControlLabel>Gate Mode</ControlLabel>
-          <Select defaultValue="Gate">
-            <option value="Gate">Gate</option>
-            <option value="Trigger">Trigger</option>
-            <option value="Hold">Hold</option>
+          <Select 
+            value={seq.gateMode}
+            onChange={(e) => updateStepSequencer(activeSeq, { gateMode: e.target.value as StepSeqGateMode })}
+          >
+            {gateModes.map(mode => (
+              <option key={mode} value={mode}>{mode}</option>
+            ))}
           </Select>
         </ControlGroup>
 
         <ControlGroup>
           <ControlLabel>Direction</ControlLabel>
-          <Select defaultValue="Forward">
-            <option value="Forward">Forward</option>
-            <option value="Backward">Backward</option>
-            <option value="PingPong">Ping Pong</option>
-            <option value="Random">Random</option>
-          </Select>
-        </ControlGroup>
-
-        <ControlGroup>
-          <ControlLabel>MIDI Sync</ControlLabel>
-          <Select defaultValue="Off">
-            <option value="Off">Off</option>
-            <option value="On">On</option>
+          <Select 
+            value={seq.direction}
+            onChange={(e) => updateStepSequencer(activeSeq, { direction: e.target.value as StepSeqDirection })}
+          >
+            {directions.map(dir => (
+              <option key={dir} value={dir}>{dir}</option>
+            ))}
           </Select>
         </ControlGroup>
       </SeqControls>

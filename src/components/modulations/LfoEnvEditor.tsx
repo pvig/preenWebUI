@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import KnobBase from '../knobs/KnobBase';
+import { useLfoEnvelope, updateLfoEnvelope } from '../../stores/patchStore';
+import type { LfoEnvLoopMode } from '../../types/modulation';
 
 const EnvContainer = styled.div`
   background: #2d3748;
@@ -23,11 +25,11 @@ const EnvTabs = styled.div`
   margin-bottom: 20px;
 `;
 
-const EnvTab = styled.button<{ active: boolean }>`
-  background: ${props => props.active ? '#4a5568' : '#1a202c'};
+const EnvTab = styled.button<{ $active: boolean }>`
+  background: ${props => props.$active ? '#4a5568' : '#1a202c'};
   border: none;
   border-radius: 4px;
-  color: ${props => props.active ? '#63b3ed' : '#a0aec0'};
+  color: ${props => props.$active ? '#63b3ed' : '#a0aec0'};
   padding: 8px 16px;
   font-size: 0.875rem;
   cursor: pointer;
@@ -93,9 +95,10 @@ const EnvVisualizer = styled.div`
  * Ces enveloppes peuvent moduler les LFOs et autres paramètres
  */
 export const LfoEnvEditor: React.FC = () => {
-  const [activeEnv, setActiveEnv] = useState<number>(1);
+  const [activeEnv, setActiveEnv] = useState<0 | 1>(0);
+  const env = useLfoEnvelope(activeEnv);
 
-  const loopModes = [
+  const loopModes: LfoEnvLoopMode[] = [
     'Off',
     'Loop',
     'Ping Pong',
@@ -106,13 +109,13 @@ export const LfoEnvEditor: React.FC = () => {
       <EnvTitle>LFO Envelope Editor</EnvTitle>
       
       <EnvTabs>
-        {[1, 2].map((envNum) => (
+        {([0, 1] as const).map((envNum) => (
           <EnvTab
             key={envNum}
-            active={activeEnv === envNum}
+            $active={activeEnv === envNum}
             onClick={() => setActiveEnv(envNum)}
           >
-            Env {envNum}
+            Env {envNum + 1}
           </EnvTab>
         ))}
       </EnvTabs>
@@ -126,14 +129,16 @@ export const LfoEnvEditor: React.FC = () => {
           <KnobBase
             size={60}
             min={0}
-            max={100}
-            step={1}
-            value={0}
-            onChange={(val) => console.log('Attack:', val)}
+            max={16}
+            step={0.01}
+            value={env.adsr.attack.time}
+            onChange={(time) => updateLfoEnvelope(activeEnv, { 
+              adsr: { ...env.adsr, attack: { ...env.adsr.attack, time } } 
+            })}
             color="#F56565"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
-            renderLabel={(v) => Math.round(v)}
+            renderLabel={(v) => v.toFixed(2)}
             label="Attack"
           />
         </ControlGroup>
@@ -144,8 +149,10 @@ export const LfoEnvEditor: React.FC = () => {
             min={0}
             max={100}
             step={1}
-            value={50}
-            onChange={(val) => console.log('Attack Level:', val)}
+            value={env.adsr.attack.level}
+            onChange={(level) => updateLfoEnvelope(activeEnv, { 
+              adsr: { ...env.adsr, attack: { ...env.adsr.attack, level } } 
+            })}
             color="#F6AD55"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
@@ -158,14 +165,16 @@ export const LfoEnvEditor: React.FC = () => {
           <KnobBase
             size={60}
             min={0}
-            max={100}
-            step={1}
-            value={30}
-            onChange={(val) => console.log('Decay:', val)}
+            max={16}
+            step={0.01}
+            value={env.adsr.decay.time}
+            onChange={(time) => updateLfoEnvelope(activeEnv, { 
+              adsr: { ...env.adsr, decay: { ...env.adsr.decay, time } } 
+            })}
             color="#48BB78"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
-            renderLabel={(v) => Math.round(v)}
+            renderLabel={(v) => v.toFixed(2)}
             label="Decay"
           />
         </ControlGroup>
@@ -176,8 +185,10 @@ export const LfoEnvEditor: React.FC = () => {
             min={0}
             max={100}
             step={1}
-            value={50}
-            onChange={(val) => console.log('Decay Level:', val)}
+            value={env.adsr.decay.level}
+            onChange={(level) => updateLfoEnvelope(activeEnv, { 
+              adsr: { ...env.adsr, decay: { ...env.adsr.decay, level } } 
+            })}
             color="#4299E1"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
@@ -190,14 +201,16 @@ export const LfoEnvEditor: React.FC = () => {
           <KnobBase
             size={60}
             min={0}
-            max={100}
-            step={1}
-            value={40}
-            onChange={(val) => console.log('Sustain:', val)}
+            max={16}
+            step={0.01}
+            value={env.adsr.sustain.time}
+            onChange={(time) => updateLfoEnvelope(activeEnv, { 
+              adsr: { ...env.adsr, sustain: { ...env.adsr.sustain, time } } 
+            })}
             color="#9F7AEA"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
-            renderLabel={(v) => Math.round(v)}
+            renderLabel={(v) => v.toFixed(2)}
             label="Sustain"
           />
         </ControlGroup>
@@ -208,8 +221,10 @@ export const LfoEnvEditor: React.FC = () => {
             min={0}
             max={100}
             step={1}
-            value={30}
-            onChange={(val) => console.log('Sustain Level:', val)}
+            value={env.adsr.sustain.level}
+            onChange={(level) => updateLfoEnvelope(activeEnv, { 
+              adsr: { ...env.adsr, sustain: { ...env.adsr.sustain, level } } 
+            })}
             color="#ED64A6"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
@@ -222,21 +237,26 @@ export const LfoEnvEditor: React.FC = () => {
           <KnobBase
             size={60}
             min={0}
-            max={100}
-            step={1}
-            value={50}
-            onChange={(val) => console.log('Release:', val)}
+            max={16}
+            step={0.01}
+            value={env.adsr.release.time}
+            onChange={(time) => updateLfoEnvelope(activeEnv, { 
+              adsr: { ...env.adsr, release: { ...env.adsr.release, time } } 
+            })}
             color="#63B3ED"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
-            renderLabel={(v) => Math.round(v)}
+            renderLabel={(v) => v.toFixed(2)}
             label="Release"
           />
         </ControlGroup>
 
         <ControlGroup>
           <ControlLabel>Loop Mode</ControlLabel>
-          <Select defaultValue="Off">
+          <Select 
+            value={env.loopMode}
+            onChange={(e) => updateLfoEnvelope(activeEnv, { loopMode: e.target.value as LfoEnvLoopMode })}
+          >
             {loopModes.map((mode) => (
               <option key={mode} value={mode}>
                 {mode}
@@ -244,6 +264,24 @@ export const LfoEnvEditor: React.FC = () => {
             ))}
           </Select>
         </ControlGroup>
+
+        {activeEnv === 1 && (
+          <ControlGroup>
+            <KnobBase
+              size={60}
+              min={0}
+              max={100}
+              step={1}
+              value={env.silence}
+              onChange={(silence) => updateLfoEnvelope(activeEnv, { silence })}
+              color="#F687B3"
+              backgroundColor="#2d3748"
+              strokeColor="#4a5568"
+              renderLabel={(v) => Math.round(v)}
+              label="Silence"
+            />
+          </ControlGroup>
+        )}
       </EnvControls>
     </EnvContainer>
   );

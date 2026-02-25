@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import KnobBase from '../knobs/KnobBase';
+import LfoWaveformSelector from './LfoWaveformSelector';
+import { type LfoType, type MidiClockMode, MIDI_CLOCK_MODES, MIDI_CLOCK_LABELS } from '../../types/lfo';
+import { useLfo, updateLfo } from '../../stores/patchStore';
 
 const LfoContainer = styled.div`
   background: #2d3748;
@@ -23,11 +26,11 @@ const LfoTabs = styled.div`
   margin-bottom: 20px;
 `;
 
-const LfoTab = styled.button<{ active: boolean }>`
-  background: ${props => props.active ? '#4a5568' : '#1a202c'};
+const LfoTab = styled.button<{ $active: boolean }>`
+  background: ${props => props.$active ? '#4a5568' : '#1a202c'};
   border: none;
   border-radius: 4px;
-  color: ${props => props.active ? '#63b3ed' : '#a0aec0'};
+  color: ${props => props.$active ? '#63b3ed' : '#a0aec0'};
   padding: 8px 16px;
   font-size: 0.875rem;
   cursor: pointer;
@@ -79,78 +82,88 @@ const Select = styled.select`
  * Gère les 3 LFOs du PreenFM3 (selon le code de référence)
  */
 export const LfoEditor: React.FC = () => {
-  const [activeLfo, setActiveLfo] = useState<number>(1);
-
-  const lfoShapes = [
-    'Sine',
-    'Saw',
-    'Square',
-    'Triangle',
-    'Random',
-  ];
-
-  const syncModes = [
-    'Off',
-    'Keysync On',
-    'MIDI Clock',
-  ];
+  const [activeLfo, setActiveLfo] = useState<0 | 1 | 2>(0);
+  const lfo = useLfo(activeLfo);
 
   return (
     <LfoContainer>
       <LfoTitle>LFO Editor</LfoTitle>
       
       <LfoTabs>
-        {[1, 2, 3].map((lfoNum) => (
+        {([0, 1, 2] as const).map((lfoNum) => (
           <LfoTab
             key={lfoNum}
-            active={activeLfo === lfoNum}
+            $active={activeLfo === lfoNum}
             onClick={() => setActiveLfo(lfoNum)}
           >
-            LFO {lfoNum}
+            LFO {lfoNum + 1}
           </LfoTab>
         ))}
       </LfoTabs>
 
       <LfoControls>
-        <ControlGroup>
-          <ControlLabel>Shape</ControlLabel>
-          <Select defaultValue="Sine">
-            {lfoShapes.map((shape) => (
-              <option key={shape} value={shape}>
-                {shape}
-              </option>
-            ))}
-          </Select>
-        </ControlGroup>
-
-        <ControlGroup>
-          <KnobBase
-            size={60}
-            min={0}
-            max={100}
-            step={0.1}
-            value={50}
-            onChange={(val) => console.log('Frequency:', val)}
-            color="#9F7AEA"
-            backgroundColor="#2d3748"
-            strokeColor="#4a5568"
-            renderLabel={(v) => v.toFixed(1)}
-            label="Frequency"
+        <ControlGroup style={{ gridColumn: '1 / -1' }}>
+          <LfoWaveformSelector
+            value={lfo.shape}
+            onChange={(shape) => updateLfo(activeLfo, { shape })}
           />
         </ControlGroup>
 
         <ControlGroup>
+          <ControlLabel>Sync Mode</ControlLabel>
+          <Select 
+            value={lfo.syncMode} 
+            onChange={(e) => updateLfo(activeLfo, { syncMode: e.target.value as 'Int' | 'Ext' })}
+          >
+            <option value="Int">Internal (0-99.9 Hz)</option>
+            <option value="Ext">External (MIDI Clock)</option>
+          </Select>
+        </ControlGroup>
+
+        <ControlGroup>
+          {lfo.syncMode === 'Int' ? (
+            <KnobBase
+              size={60}
+              min={0}
+              max={99.9}
+              step={0.1}
+              value={lfo.frequency}
+              onChange={(frequency) => updateLfo(activeLfo, { frequency })}
+              color="#9F7AEA"
+              backgroundColor="#2d3748"
+              strokeColor="#4a5568"
+              renderLabel={(v) => v.toFixed(1) + ' Hz'}
+              label="Frequency"
+            />
+          ) : (
+            <div>
+              <ControlLabel>MIDI Clock Mode</ControlLabel>
+              <Select
+                value={lfo.midiClockMode}
+                onChange={(e) => updateLfo(activeLfo, { midiClockMode: e.target.value as MidiClockMode })}
+              >
+                {MIDI_CLOCK_MODES.map((mode) => (
+                  <option key={mode} value={mode}>
+                    {MIDI_CLOCK_LABELS[mode]}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+        </ControlGroup>
+
+        <ControlGroup>
           <KnobBase
             size={60}
             min={0}
-            max={100}
+            max={360}
             step={1}
-            value={0}
-            onChange={(val) => console.log('Phase:', val)}
+            value={lfo.phase}
+            onChange={(phase) => updateLfo(activeLfo, { phase })}
             color="#48BB78"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
-            renderLabel={(v) => Math.round(v)}
+            renderLabel={(v) => Math.round(v) + '°'}
             label="Phase"
           />
         </ControlGroup>
@@ -158,42 +171,34 @@ export const LfoEditor: React.FC = () => {
         <ControlGroup>
           <KnobBase
             size={60}
-            min={-100}
-            max={100}
-            step={1}
-            value={0}
-            onChange={(val) => console.log('Bias:', val)}
+            min={-1}
+            max={1}
+            step={0.01}
+            value={lfo.bias}
+            onChange={(bias) => updateLfo(activeLfo, { bias })}
             color="#F6AD55"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
-            renderLabel={(v) => Math.round(v)}
+            renderLabel={(v) => v.toFixed(2)}
             label="Bias"
           />
         </ControlGroup>
 
         <ControlGroup>
-          <ControlLabel>Sync Mode</ControlLabel>
-          <Select defaultValue="Off">
-            {syncModes.map((mode) => (
-              <option key={mode} value={mode}>
-                {mode}
-              </option>
-            ))}
-          </Select>
-        </ControlGroup>
-
-        <ControlGroup>
           <KnobBase
             size={60}
-            min={0}
+            min={-1}
             max={16}
-            step={1}
-            value={0}
-            onChange={(val) => console.log('KeySync:', val)}
+            step={0.1}
+            value={lfo.keysync === 'Off' ? -1 : lfo.keysync}
+            onChange={(value) => {
+              const keysync = value < 0 ? 'Off' : Math.max(0, value);
+              updateLfo(activeLfo, { keysync });
+            }}
             color="#63B3ED"
             backgroundColor="#2d3748"
             strokeColor="#4a5568"
-            renderLabel={(v) => Math.round(v)}
+            renderLabel={(v) => v < 0 ? 'Off' : v.toFixed(1)}
             label="KeySync"
           />
         </ControlGroup>

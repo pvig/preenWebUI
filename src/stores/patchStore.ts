@@ -12,6 +12,9 @@ import {
   GlobalEffects,
   DEFAULT_OPERATOR,
   DEFAULT_ADSR,
+  DEFAULT_LFO,
+  DEFAULT_LFO_ENVELOPE,
+  DEFAULT_STEP_SEQUENCER,
   DEFAULT_ALGORITHMS,
   Algorithm,
   ModulationMatrixRow
@@ -45,6 +48,25 @@ const createDefaultPatch = (): Patch => ({
     destination2: 'None',
     amount: 0
   })),
+
+  // 3 LFOs par défaut
+  lfos: [
+    { ...DEFAULT_LFO },
+    { ...DEFAULT_LFO },
+    { ...DEFAULT_LFO }
+  ],
+
+  // 2 LFO Envelopes par défaut
+  lfoEnvelopes: [
+    { ...DEFAULT_LFO_ENVELOPE },
+    { ...DEFAULT_LFO_ENVELOPE }
+  ],
+
+  // 2 Step Sequencers par défaut
+  stepSequencers: [
+    { ...DEFAULT_STEP_SEQUENCER },
+    { ...DEFAULT_STEP_SEQUENCER }
+  ],
 
   global: {
     volume: 0.8,
@@ -151,6 +173,15 @@ interface PatchStore extends EditorState {
 
   // Actions pour la matrice de modulation
   updateModulationMatrixRow: (rowIndex: number, changes: Partial<ModulationMatrixRow>) => void;
+
+  // Actions pour les LFO
+  updateLfo: (lfoIndex: 0 | 1 | 2, changes: Partial<import('../types/patch').LFO>) => void;
+
+  // Actions pour les LFO Envelopes
+  updateLfoEnvelope: (envIndex: 0 | 1, changes: Partial<import('../types/modulation').LFOEnvelope>) => void;
+
+  // Actions pour les Step Sequencers
+  updateStepSequencer: (seqIndex: 0 | 1, changes: Partial<import('../types/modulation').StepSequencer>) => void;
 
   // Actions globales
   updateGlobal: (changes: Partial<Patch['global']>) => void;
@@ -347,6 +378,61 @@ export const usePatchStore = create<PatchStore>()(
         }
       }),
 
+    // Actions pour les LFO
+    updateLfo: (lfoIndex: 0 | 1 | 2, changes: Partial<import('../types/patch').LFO>) =>
+      set((state) => {
+        // S'assurer que lfos existe (compatibilité avec les anciens patches)
+        if (!state.currentPatch.lfos) {
+          state.currentPatch.lfos = [
+            { ...DEFAULT_LFO },
+            { ...DEFAULT_LFO },
+            { ...DEFAULT_LFO }
+          ];
+        }
+        
+        if (lfoIndex >= 0 && lfoIndex < 3) {
+          Object.assign(state.currentPatch.lfos[lfoIndex], changes);
+          state.isModified = true;
+          updateLastModified(state.currentPatch);
+        }
+      }),
+
+    // Actions pour les LFO Envelopes
+    updateLfoEnvelope: (envIndex: 0 | 1, changes: Partial<import('../types/modulation').LFOEnvelope>) =>
+      set((state) => {
+        // S'assurer que lfoEnvelopes existe (compatibilité avec les anciens patches)
+        if (!state.currentPatch.lfoEnvelopes) {
+          state.currentPatch.lfoEnvelopes = [
+            { ...DEFAULT_LFO_ENVELOPE },
+            { ...DEFAULT_LFO_ENVELOPE }
+          ];
+        }
+        
+        if (envIndex >= 0 && envIndex < 2) {
+          Object.assign(state.currentPatch.lfoEnvelopes[envIndex], changes);
+          state.isModified = true;
+          updateLastModified(state.currentPatch);
+        }
+      }),
+
+    // Actions pour les Step Sequencers
+    updateStepSequencer: (seqIndex: 0 | 1, changes: Partial<import('../types/modulation').StepSequencer>) =>
+      set((state) => {
+        // S'assurer que stepSequencers existe (compatibilité avec les anciens patches)
+        if (!state.currentPatch.stepSequencers) {
+          state.currentPatch.stepSequencers = [
+            { ...DEFAULT_STEP_SEQUENCER },
+            { ...DEFAULT_STEP_SEQUENCER }
+          ];
+        }
+        
+        if (seqIndex >= 0 && seqIndex < 2) {
+          Object.assign(state.currentPatch.stepSequencers[seqIndex], changes);
+          state.isModified = true;
+          updateLastModified(state.currentPatch);
+        }
+      }),
+
     // Actions globales
     updateGlobal: (changes: Partial<Patch['global']>) =>
       set((state) => {
@@ -393,6 +479,29 @@ export const usePatchStore = create<PatchStore>()(
         
         // Charger le nouveau patch
         const newPatch = { ...patch };
+        
+        // Assurer la compatibilité : initialiser les sources de modulation si non présentes
+        if (!newPatch.lfos) {
+          newPatch.lfos = [
+            { ...DEFAULT_LFO },
+            { ...DEFAULT_LFO },
+            { ...DEFAULT_LFO }
+          ];
+        }
+        
+        if (!newPatch.lfoEnvelopes) {
+          newPatch.lfoEnvelopes = [
+            { ...DEFAULT_LFO_ENVELOPE },
+            { ...DEFAULT_LFO_ENVELOPE }
+          ];
+        }
+        
+        if (!newPatch.stepSequencers) {
+          newPatch.stepSequencers = [
+            { ...DEFAULT_STEP_SEQUENCER },
+            { ...DEFAULT_STEP_SEQUENCER }
+          ];
+        }
         
         // Réappliquer les valeurs MIX/PAN préservées
         newPatch.operators = newPatch.operators.map(op => {
@@ -520,6 +629,36 @@ export const useOperatorEnvelope = (operatorId: number) => usePatchStore(state =
 });
 export const updateADSR = (operatorId: number, envelope: Partial<AdsrState>) =>
   usePatchStore.getState().updateADSR(operatorId, envelope);
+
+export const useLfo = (lfoIndex: 0 | 1 | 2) => usePatchStore(state => {
+  // S'assurer que lfos existe (compatibilité avec les anciens patches)
+  if (!state.currentPatch.lfos) {
+    return { ...DEFAULT_LFO };
+  }
+  return state.currentPatch.lfos[lfoIndex];
+});
+export const updateLfo = (lfoIndex: 0 | 1 | 2, changes: Partial<import('../types/patch').LFO>) =>
+  usePatchStore.getState().updateLfo(lfoIndex, changes);
+
+export const useLfoEnvelope = (envIndex: 0 | 1) => usePatchStore(state => {
+  // S'assurer que lfoEnvelopes existe (compatibilité avec les anciens patches)
+  if (!state.currentPatch.lfoEnvelopes) {
+    return { ...DEFAULT_LFO_ENVELOPE };
+  }
+  return state.currentPatch.lfoEnvelopes[envIndex];
+});
+export const updateLfoEnvelope = (envIndex: 0 | 1, changes: Partial<import('../types/modulation').LFOEnvelope>) =>
+  usePatchStore.getState().updateLfoEnvelope(envIndex, changes);
+
+export const useStepSequencer = (seqIndex: 0 | 1) => usePatchStore(state => {
+  // S'assurer que stepSequencers existe (compatibilité avec les anciens patches)
+  if (!state.currentPatch.stepSequencers) {
+    return { ...DEFAULT_STEP_SEQUENCER };
+  }
+  return state.currentPatch.stepSequencers[seqIndex];
+});
+export const updateStepSequencer = (seqIndex: 0 | 1, changes: Partial<import('../types/modulation').StepSequencer>) =>
+  usePatchStore.getState().updateStepSequencer(seqIndex, changes);
 
 export const updateModulationAmount = (sourceId: number, targetId: number, amount: number) =>
   usePatchStore.getState().updateModulationAmount(sourceId, targetId, amount);
