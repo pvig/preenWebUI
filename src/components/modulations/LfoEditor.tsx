@@ -8,22 +8,35 @@ import { useLfo, updateLfo } from '../../stores/patchStore';
 const LfoContainer = styled.div`
   background: #2d3748;
   border-radius: 8px;
-  padding: 20px;
+  padding: 12px;
   margin-bottom: 20px;
 `;
 
 const LfoTitle = styled.h3`
   color: #e2e8f0;
   font-size: 1rem;
-  margin: 0 0 15px 0;
+  margin: 0 0 8px 0;
   text-transform: uppercase;
   letter-spacing: 1px;
 `;
 
+const HeaderRow = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+`;
+
+const HeaderLeft = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+`;
+
 const LfoTabs = styled.div`
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 8px;
 `;
 
 const LfoTab = styled.button<{ $active: boolean }>`
@@ -31,7 +44,7 @@ const LfoTab = styled.button<{ $active: boolean }>`
   border: none;
   border-radius: 4px;
   color: ${props => props.$active ? '#63b3ed' : '#a0aec0'};
-  padding: 8px 16px;
+  padding: 6px 12px;
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -45,7 +58,7 @@ const LfoTab = styled.button<{ $active: boolean }>`
 const LfoControls = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 20px;
+  gap: 16px;
   align-items: start;
 `;
 
@@ -87,28 +100,29 @@ export const LfoEditor: React.FC = () => {
 
   return (
     <LfoContainer>
-      <LfoTitle>LFO Editor</LfoTitle>
-      
-      <LfoTabs>
-        {([0, 1, 2] as const).map((lfoNum) => (
-          <LfoTab
-            key={lfoNum}
-            $active={activeLfo === lfoNum}
-            onClick={() => setActiveLfo(lfoNum)}
-          >
-            LFO {lfoNum + 1}
-          </LfoTab>
-        ))}
-      </LfoTabs>
+      <HeaderRow>
+        <HeaderLeft>
+          <LfoTitle>LFO Editor</LfoTitle>
+          <LfoTabs>
+            {([0, 1, 2] as const).map((lfoNum) => (
+              <LfoTab
+                key={lfoNum}
+                $active={activeLfo === lfoNum}
+                onClick={() => setActiveLfo(lfoNum)}
+              >
+                LFO {lfoNum + 1}
+              </LfoTab>
+            ))}
+          </LfoTabs>
+        </HeaderLeft>
+        
+        <LfoWaveformSelector
+          value={lfo.shape}
+          onChange={(shape) => updateLfo(activeLfo, { shape })}
+        />
+      </HeaderRow>
 
       <LfoControls>
-        <ControlGroup style={{ gridColumn: '1 / -1' }}>
-          <LfoWaveformSelector
-            value={lfo.shape}
-            onChange={(shape) => updateLfo(activeLfo, { shape })}
-          />
-        </ControlGroup>
-
         <ControlGroup>
           <ControlLabel>Sync Mode</ControlLabel>
           <Select 

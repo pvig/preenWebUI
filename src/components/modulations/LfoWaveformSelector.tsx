@@ -13,15 +13,15 @@ const WaveformVisualization = styled.div`
   background: #1a202c;
   border: 1px solid #2d3748;
   border-radius: 6px;
-  padding: 12px;
-  min-height: 80px;
+  padding: 8px 12px;
+  min-height: 60px;
   display: flex;
   align-items: center;
 `;
 
 const WaveformCanvas = styled.svg`
   width: 100%;
-  height: 60px;
+  height: 50px;
 `;
 
 const Select = styled.select`
@@ -53,7 +53,7 @@ interface LfoWaveformSelectorProps {
  * Génère les points pour visualiser une forme d'onde LFO
  * Basé sur le firmware PreenFM3 LfoOsc.cpp
  */
-const generateWaveformPath = (type: LfoType, width: number = 200, height: number = 60): string => {
+const generateWaveformPath = (type: LfoType, width: number = 200, height: number = 50): string => {
   const points: number[] = [];
   const numPoints = 200;
   const centerY = height / 2;
@@ -133,7 +133,7 @@ const LfoWaveformSelector: React.FC<LfoWaveformSelectorProps> = ({ value, onChan
   return (
     <SelectorContainer>
       <WaveformVisualization>
-        <WaveformCanvas viewBox="0 0 200 60" preserveAspectRatio="none">
+        <WaveformCanvas viewBox="0 0 200 50" preserveAspectRatio="none">
           <path
             d={path}
             fill="none"
