@@ -94,9 +94,9 @@ const generateWaveformPath = (type: LfoType, width: number = 200, height: number
         break;
         
       case 'LFO_BROWNIAN':
-        // Brownian motion (marche aléatoire lissée)
-        const brownianSeed = Math.sin(t * 50 + Math.cos(t * 30)) * Math.cos(t * 40);
-        y = centerY - brownianSeed * amplitude;
+        // Sample & Hold aléatoire (changement tous les 10%)
+        const randomIndex2 = 1 + Math.floor(t * 8);
+        y = centerY - (Math.sin(randomIndex2) * amplitude);
         break;
         
       case 'LFO_WANDERING':

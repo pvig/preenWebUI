@@ -9,7 +9,7 @@ import { AdsrState } from './adsr';
 /**
  * Mode de boucle pour LFO Envelope
  */
-export type LfoEnvLoopMode = 'Off' | 'Loop' | 'Ping Pong';
+export type LfoEnvLoopMode = 'Off' | 'Silence' | 'Attack';
 
 /**
  * LFO Envelope

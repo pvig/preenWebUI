@@ -308,13 +308,70 @@ export class PreenFM3Parser {
         };
       }) as [LFO, LFO, LFO],
       
-      // TODO: LFO Envelopes and Step Sequencers
-      // LFO ENV: indices ROW_LFOENV1, ROW_LFOENV2 (ADSR + loop mode)
-      // Step Seq: MSB=2-3, LSB=step number (16 steps par séquenceur)
+      // LFO Envelopes (2 enveloppes)
+      // Free Envelopes since official editor source:
+      // PREENFM2_NRPN_FREE_ENV1_ATTK = 180 (MSB=1, LSB=52)
+      // PREENFM2_NRPN_FREE_ENV1_DECAY = 181 (MSB=1, LSB=53)
+      // PREENFM2_NRPN_FREE_ENV1_SUSTAIN = 182 (MSB=1, LSB=54)
+      // PREENFM2_NRPN_FREE_ENV1_RELEASE = 183 (MSB=1, LSB=55)
+      // PREENFM2_NRPN_FREE_ENV2_SILENCE = 184 (MSB=1, LSB=56)
+      // PREENFM2_NRPN_FREE_ENV2_ATTK = 185 (MSB=1, LSB=57)
+      // PREENFM2_NRPN_FREE_ENV2_DECAY = 186 (MSB=1, LSB=58)
+      // PREENFM2_NRPN_FREE_ENV2_LOOP = 187 (MSB=1, LSB=59)
+      // Values are in centièmes (multiplier = 100, range 0-16s -> 0-1600)
       lfoEnvelopes: [
-        { ...DEFAULT_LFO_ENVELOPE },
-        { ...DEFAULT_LFO_ENVELOPE }
-      ],
+        // Env1: ADSR structure
+        {
+          adsr: {
+            attack: { 
+              time: (this.getValue(1, 52) ?? 100) / 100,  // Default 1s
+              level: 100  // Level not transmitted, always 100
+            },
+            decay: { 
+              time: (this.getValue(1, 53) ?? 200) / 100,  // Default 2s
+              level: 50   // Level not transmitted, default 50%
+            },
+            sustain: { 
+              time: (this.getValue(1, 54) ?? 300) / 100,  // Default 3s
+              level: 50   // Sustain level = decay level
+            },
+            release: { 
+              time: (this.getValue(1, 55) ?? 100) / 100,  // Default 1s
+              level: 0    // Level not transmitted, always 0
+            },
+          },
+          loopMode: 'Off' as const,
+          silence: 0,
+        },
+        // Env2: Silence-Attack-Release structure  
+        {
+          adsr: {
+            attack: { 
+              time: (this.getValue(1, 57) ?? 200) / 100,  // Attack time, default 2s
+              level: 100  // Attack level always 100
+            },
+            decay: { 
+              time: (this.getValue(1, 58) ?? 100) / 100,  // Release time (stored in decay), default 1s
+              level: 0    // Release level always 0
+            },
+            sustain: { time: 0, level: 0 },  // Not used
+            release: { time: 0, level: 0 },  // Not used
+          },
+          loopMode: (() => {
+            const loopValue = this.getValue(1, 59) ?? 0;  // Loop mode
+            // Firmware enum: LFO_ENV2_NOLOOP=0, LFO_ENV2_LOOP_SILENCE=1, LFO_ENV2_LOOP_ATTACK=2
+            // - Off: No loop
+            // - Silence: Loop all (silence + attack + release) - "Sile" on PreenFM3
+            // - Attack: Loop from end of silence (attack + release) - "Attk" on PreenFM3
+            const modes: Array<'Off' | 'Silence' | 'Attack'> = ['Off', 'Silence', 'Attack'];
+            return modes[loopValue] || 'Off';
+          })(),
+          silence: (this.getValue(1, 56) ?? 0) / 100,  // Silence time, default 0s
+        },
+      ] as [typeof DEFAULT_LFO_ENVELOPE, typeof DEFAULT_LFO_ENVELOPE],
+      
+      // Step Sequencers (TODO)
+      // Step Seq: MSB=2-3, LSB=step number (16 steps par séquenceur)
       stepSequencers: [
         { ...DEFAULT_STEP_SEQUENCER },
         { ...DEFAULT_STEP_SEQUENCER }

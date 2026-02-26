@@ -20,7 +20,7 @@ export default function App() {
           Patch
         </button>
         <button onClick={() => setCurrentScreen('matrix')} className={currentScreen === 'matrix' ? 'active' : ''}>
-          Matrix
+          Modulations
         </button>
         <button onClick={() => setCurrentScreen('effects')} className={currentScreen === 'effects' ? 'active' : ''}>
           Effets
