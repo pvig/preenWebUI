@@ -1,5 +1,7 @@
 // FineTuneKnob.jsx
+import React from "react";
 import Knob from "../../knobs/KnobBase";
+import { useThemeStore } from '../../../theme/themeStore';
 
 interface FineTuneKnobProps {
   min?: number;
@@ -19,6 +21,7 @@ export const FineTuneKnob: React.FC<FineTuneKnobProps> = ({
   onChange,
   ...props
 }) => {
+  const { theme } = useThemeStore();
   const setFineValue = (v: number) => {
     const rounded = Math.round(v / step) * step;
     onChange(parseFloat(rounded.toFixed(4))); // 4 décimales max
@@ -34,8 +37,8 @@ export const FineTuneKnob: React.FC<FineTuneKnobProps> = ({
       label={label}
       renderLabel={(v: number) => v.toFixed(2)}
       color="#1E90FF"
-      strokeColor="#aaa"
-      backgroundColor="#f5faff"
+      strokeColor={theme.colors.knobStroke}
+      backgroundColor={theme.colors.knobBackground}
       size={60}
     />
   );

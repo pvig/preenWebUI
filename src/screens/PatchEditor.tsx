@@ -6,13 +6,14 @@ import CarrierControls from '../components/fmEngine/CarrierControls';
 import { useCurrentPatch, updateGlobal } from '../stores/patchStore';
 import ModulationIndexesEditor from '../components/fmEngine/ModulationIndexesEditor';
 import KnobBase from '../components/knobs/KnobBase';
+import { useThemeStore } from '../theme/themeStore';
 
 const Row = styled.div`
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   height: auto;
-  background: #1a202c;
+  background: ${props => props.theme.colors.background};
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -33,7 +34,7 @@ const GlobalKnobWrapper = styled.div`
 
 
 export function PatchEditor() {
-
+  const { theme } = useThemeStore();
   const currentPatch = useCurrentPatch();
 
   if(!currentPatch) {
@@ -53,8 +54,8 @@ export function PatchEditor() {
             updateGlobal({ velocitySensitivity: Math.round(val) })
           }
           color="#FF9800"
-          backgroundColor="#2d3748"
-          strokeColor="#4a5568"
+          backgroundColor={theme.colors.knobBackground}
+          strokeColor={theme.colors.knobStroke}
           renderLabel={(v) => Math.round(v)}
           label="Velocity"
         />
@@ -74,8 +75,8 @@ export function PatchEditor() {
             updateGlobal({ polyphony: Math.round(val) })
           }
           color="#63B3ED"
-          backgroundColor="#2d3748"
-          strokeColor="#4a5568"
+          backgroundColor={theme.colors.knobBackground}
+          strokeColor={theme.colors.knobStroke}
           renderLabel={(v) => Math.round(v)}
           label="Voices*"
           title="Non récupéré du PreenfM3 (paramètre mixer). Ajuster manuellement."
@@ -92,8 +93,8 @@ export function PatchEditor() {
             updateGlobal({ glideTime: Math.round(val) })
           }
           color="#9F7AEA"
-          backgroundColor="#2d3748"
-          strokeColor="#4a5568"
+          backgroundColor={theme.colors.knobBackground}
+          strokeColor={theme.colors.knobStroke}
           renderLabel={(v) => Math.round(v)}
           label="Glide"
         />

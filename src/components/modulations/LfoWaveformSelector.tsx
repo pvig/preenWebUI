@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { LfoType, LFO_TYPE_LABELS, LFO_TYPES } from '../../types/lfo';
+import { useThemeStore } from '../../theme/themeStore';
 
 const SelectorContainer = styled.div`
   display: flex;
@@ -10,8 +11,8 @@ const SelectorContainer = styled.div`
 
 const WaveformVisualization = styled.div`
   flex: 1;
-  background: #1a202c;
-  border: 1px solid #2d3748;
+  background: ${props => props.theme.colors.background};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 6px;
   padding: 8px 12px;
   min-height: 60px;
@@ -25,10 +26,10 @@ const WaveformCanvas = styled.svg`
 `;
 
 const Select = styled.select`
-  background: #4a5568;
-  border: 1px solid #2d3748;
+  background: ${props => props.theme.colors.button};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
-  color: #e2e8f0;
+  color: ${props => props.theme.colors.text};
   padding: 8px 12px;
   font-size: 0.875rem;
   min-width: 140px;
@@ -36,11 +37,11 @@ const Select = styled.select`
   
   &:focus {
     outline: none;
-    border-color: #63b3ed;
+    border-color: ${props => props.theme.colors.primary};
   }
   
   &:hover {
-    background: #5a6578;
+    background: ${props => props.theme.colors.buttonHover};
   }
 `;
 
@@ -128,6 +129,7 @@ const generateWaveformPath = (type: LfoType, width: number = 200, height: number
 };
 
 const LfoWaveformSelector: React.FC<LfoWaveformSelectorProps> = ({ value, onChange }) => {
+  const { theme } = useThemeStore();
   const path = generateWaveformPath(value);
   
   return (
@@ -137,7 +139,7 @@ const LfoWaveformSelector: React.FC<LfoWaveformSelectorProps> = ({ value, onChan
           <path
             d={path}
             fill="none"
-            stroke="#63b3ed"
+            stroke={theme.colors.primary}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"

@@ -8,7 +8,7 @@ const SelectorContainer = styled.div`
   flex-direction: column;
   gap: 10px;
   padding: 20px;
-  background: #2d3748;
+  background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   min-width: 250px;
   max-width: 420px;
@@ -43,7 +43,7 @@ const NavButton = styled.button`
   width: 28px;
   height: 28px;
   border-radius: 4px;
-  background: #4a5568;
+  background: ${props => props.theme.colors.button};
   color: white;
   border: none;
   font-size: 0.9rem;
@@ -68,9 +68,9 @@ const NavButton = styled.button`
 const AlgorithmSelect = styled.select`
   width: 140px;
   padding: 6px 10px;
-  background: #1a202c;
-  color: #cbd5e0;
-  border: 2px solid #4a5568;
+  background: ${props => props.theme.colors.background};
+  color: ${props => props.theme.colors.text};
+  border: 2px solid ${props => props.theme.colors.border};
   border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 500;
@@ -88,13 +88,13 @@ const AlgorithmSelect = styled.select`
   }
 
   option {
-    background: #1a202c;
-    color: #cbd5e0;
+    background: ${props => props.theme.colors.background};
+    color: ${props => props.theme.colors.text};
   }
 `;
 
 const VisualizationWrapper = styled.div`
-  background: #1a202c;
+  background: ${props => props.theme.colors.background};
   border-radius: 8px;
   padding: 15px;
   position: relative;
@@ -109,7 +109,7 @@ const VisualizationWrapper = styled.div`
 const VisualizationContainer = styled.div`
   flex: 1 1 260px;
   min-width: 220px;
-  background: #1a202c;
+  background: ${props => props.theme.colors.background};
   border-radius: 8px;
   padding: 15px;
   position: relative;

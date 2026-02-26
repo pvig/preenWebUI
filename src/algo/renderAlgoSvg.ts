@@ -1,11 +1,13 @@
 import type { AlgoDiagram } from "./algorithms.static";
 import type { HighlightedLink } from "../components/fmEngine/FMSynthContext";
+import type { Theme } from "../theme/theme";
 
 type RenderOptions = {
   cell?: number;
   margin?: number;
   highlightedLink?: HighlightedLink | null;
   highlightedNode?: number | null;
+  theme?: Theme;
 };
 
 export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): string {
@@ -52,11 +54,11 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
     // Déterminer la couleur de base selon le type de liaison
     let baseColor: string;
     if (e.kind === "sync") {
-      // Synchronisation : rose
-      baseColor = "#b910ab";
+      // Synchronisation : rose/accent
+      baseColor = opts.theme?.colors.accent || "#b910ab";
     } else {
-      // Modulation : bleu (vers CARRIER) ou violet (vers MODULATOR)
-      baseColor = b.type === "CARRIER" ? "#0ea5e9" : "#7c3aed";
+      // Modulation : primary (vers CARRIER) ou variant plus clair (vers MODULATOR)
+      baseColor = b.type === "CARRIER" ? (opts.theme?.colors.primary || "#0ea5e9") : "#7c3aed";
     }
     
     const imLabel = `IM${i + 1}`;
@@ -75,7 +77,7 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
       return `
         <g class="edge-group feedback" data-source="${sourceId}" data-target="${targetId}" data-base-color="${baseColor}">
           <path class="edge" d="${arcPath}" stroke="${baseColor}" stroke-width="2" fill="none" />
-          <text class="edge-label" x="${loopCenterX}" y="${loopCenterY - 8}" text-anchor="middle" font-size="10" font-weight="bold" fill="#a0aec0" style="pointer-events: none;">${imLabel}</text>
+          <text class="edge-label" x="${loopCenterX}" y="${loopCenterY - 8}" text-anchor="middle" font-size="10" font-weight="bold" fill="${opts.theme?.colors.textMuted || '#a0aec0'}" style="pointer-events: none;">${imLabel}</text>
         </g>
       `;
     }
@@ -87,7 +89,7 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
     return `
       <g class="edge-group" data-source="${sourceId}" data-target="${targetId}" data-base-color="${baseColor}">
         <line class="edge" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${baseColor}" stroke-width="2" />
-        <text class="edge-label" x="${midX}" y="${midY - 6}" text-anchor="middle" font-size="10" font-weight="bold" fill="#a0aec0" style="pointer-events: none;">${imLabel}</text>
+        <text class="edge-label" x="${midX}" y="${midY - 6}" text-anchor="middle" font-size="10" font-weight="bold" fill="${opts.theme?.colors.textMuted || '#a0aec0'}" style="pointer-events: none;">${imLabel}</text>
       </g>
     `;
   });
@@ -99,16 +101,21 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
     const nodeId = parseInt(n.id.replace(/\D/g, '')); // "op1" -> 1
     
     const radius = isCarrier ? 16 : 12;
-    const fillColor = isCarrier ? "#68D391" : "#63B3ED";
+    const fillColor = isCarrier ? "#68D391" : (opts.theme?.colors.primary || "#63B3ED");
+    const strokeColor = opts.theme?.colors.border || "#2D3748";
+    const textColor = opts.theme?.colors.text || "#1a202c";
     
     return `
       <g id="node-${i}" class="node" data-node-id="${nodeId}">
-        <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fillColor}" stroke="#2D3748" stroke-width="2" />
-        <text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a202c">${n.label}</text>
+        <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />
+        <text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="11" font-weight="bold" fill="${textColor}">${n.label}</text>
       </g>
     `;
   });
 
+  const highlightColor = opts.theme?.colors.highlight || "#fbbf24";
+  const backgroundColor = opts.theme?.colors.background || "#0b1020";
+  
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
@@ -117,7 +124,7 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
         transition: stroke 0.5s ease, stroke-width 0.5s ease;
       }
       .node-highlighted circle {
-        stroke: #fbbf24;
+        stroke: ${highlightColor};
         stroke-width: 4;
         transition: stroke 0.03s ease, stroke-width 0.3s ease;
       }
@@ -125,7 +132,7 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
         transition: stroke 0.5s ease, stroke-width 0.5s ease;
       }
       .edge-highlighted .edge {
-        stroke: #fbbf24 !important;
+        stroke: ${highlightColor} !important;
         stroke-width: 4;
         transition: stroke 0.03s ease, stroke-width 0.03s ease;
       }
@@ -133,12 +140,12 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
         transition: fill 1s ease;
       }
       .edge-highlighted .edge-label {
-        fill: #fbbf24;
+        fill: ${highlightColor};
         transition: fill 0.03s ease;
       }
     </style>
   </defs>
-  <rect width="100%" height="100%" fill="#0b1020" />
+  <rect width="100%" height="100%" fill="${backgroundColor}" />
   ${edges.join("\n")}
   ${nodes.join("\n")}
 </svg>`.trim();

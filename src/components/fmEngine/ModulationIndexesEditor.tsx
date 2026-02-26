@@ -5,13 +5,14 @@ import { useCurrentPatch, updateModulationAmount, updateModulationVelo } from '.
 import { useFMSynthContext } from './FMSynthContext';
 import { ALGO_DIAGRAMS } from '../../algo/algorithms.static';
 import KnobBase from '../knobs/KnobBase';
+import { useThemeStore } from '../../theme/themeStore';
 
 const EditorContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 20px;
-  background: #2d3748;
+  background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   min-width: 250px;
   max-width: 420px;
@@ -46,7 +47,7 @@ const GlobalKnobsContainer = styled.div`
 `;
 
 const ModulationList = styled.div`
-  background: #1a202c;
+  background: ${props => props.theme.colors.background};
   border-radius: 8px;
   padding: 15px;
   min-height: 220px;
@@ -56,7 +57,7 @@ const ModulationList = styled.div`
 
 const ModulationListTitle = styled.h4`
   margin: 0 0 12px 0;
-  color: #cbd5e0;
+  color: ${props => props.theme.colors.textSecondary};
   font-size: 0.85rem;
   font-weight: 600;
 `;
@@ -68,14 +69,14 @@ const ModulationItem = styled.div`
   gap: 8px;
   margin-bottom: 1px;
   padding: 4px 8px;
-  background: #1a202c;
+  background: ${props => props.theme.colors.background};
   border-radius: 4px;
 `;
 
 const Label = styled.label`
   flex: 1;
   min-width: 140px;
-  color: #cbd5e0;
+  color: ${props => props.theme.colors.textSecondary};
   font-size: 0.7rem;
   line-height: 1;
   font-weight: 600;
@@ -127,6 +128,7 @@ interface ModulationIndexesEditorProps {
 }
 
 export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = ({ algorithm, globalKnobs }) => {
+  const { theme } = useThemeStore();
   const currentPatch = useCurrentPatch();
   const { setHighlightedLink } = useFMSynthContext();
 
@@ -257,7 +259,7 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
                   onChange={(val) => handleIMChange(link.sourceId, link.targetId, Math.round(val))}
                   color="#0ea5e9"
                   backgroundColor="#1a202c"
-                  strokeColor="#4a5568"
+                  strokeColor={theme.colors.knobStroke}
                   renderLabel={(val) => Math.round(val)}
                   label={null}
                 />
@@ -273,7 +275,7 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
                   onChange={(val) => handleVeloChange(link.sourceId, link.targetId, Math.round(val))}
                   color="#7c3aed"
                   backgroundColor="#1a202c"
-                  strokeColor="#4a5568"
+                  strokeColor={theme.colors.knobStroke}
                   renderLabel={(val) => Math.round(val)}
                   label={null}
                 />

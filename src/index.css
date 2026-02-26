@@ -2,33 +2,30 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.1;
   font-weight: 400;
-
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #1a1a1a;
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+}
+
+a {
+  font-weight: 500;
+  text-decoration: inherit;
 }
 
 button {
@@ -38,29 +35,8 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #fff;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #ddd;
-  }
 }
 
 .operator-panel {
@@ -75,56 +51,13 @@ button:focus-visible {
   box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
   transition: border-color 0.03s ease, box-shadow 0.03s ease;
 }
-.adsr {
-  background: #1d1d1d;
-  margin-top: 10px;
-}
-.envelope-editor {
-  position: relative;
-  background: #1e1e2e;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-.tooltip {
-  position: absolute;
-  transform: translate(30px, -30px);
-  background: rgba(0,0,0,0.7);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.adsr-values pre {
-  background: #2d2d3d;
-  padding: 10px;
-  border-radius: 4px;
-  color: #f8f8f2;
-}
 
 .editor-container, .matrix-container, .library-container {
   padding: 0.5em 0 0 0;
 }
 
-.main-nav {
-  background-color: #ddd;
-}
 h3 {
   margin: 0.5em 1em;
-  color: #bbb;
-}
-button {
-  background-color: #eee;
-  color: black;
-}
-.main-nav button {
-  border-bottom-left-radius:0;
-  border-bottom-right-radius:0;
-}
-.main-nav button.active {
-  background-color: #fff;
-  color: black;
 }
 
 .operator-grid {

@@ -2,82 +2,127 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import KnobBase from '../knobs/KnobBase';
 import { useStepSequencer, updateStepSequencer } from '../../stores/patchStore';
-import type { StepSeqGateMode, StepSeqDirection } from '../../types/modulation';
+import type { StepSeqSyncMode, StepSeqMidiClockMode } from '../../types/modulation';
+import { STEP_SEQ_MIDI_CLOCK_MODES } from '../../types/modulation';
+import { useThemeStore } from '../../theme/themeStore';
 
 const SeqContainer = styled.div`
-  background: #2d3748;
+  background: ${props => props.theme.colors.panel};
   border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 20px;
+  padding: 12px;
+  margin-bottom: 16px;
+  border: 1px solid ${props => props.theme.colors.border};
+`;
+
+const HeaderRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+`;
+
+const TitleTabGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
 `;
 
 const SeqTitle = styled.h3`
-  color: #e2e8f0;
+  color: ${props => props.theme.colors.text};
   font-size: 0.9rem;
-  margin: 0 0 10px 0;
+  margin: 0;
   text-transform: uppercase;
   letter-spacing: 1px;
+  min-width: 150px;
 `;
 
 const SeqTabs = styled.div`
   display: flex;
   gap: 8px;
-  margin-bottom: 12px;
 `;
 
 const SeqTab = styled.button<{ $active: boolean }>`
-  background: ${props => props.$active ? '#4a5568' : '#1a202c'};
-  border: none;
+  background: ${props => props.$active ? props.theme.colors.buttonActive : props.theme.colors.background};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
-  color: ${props => props.$active ? '#63b3ed' : '#a0aec0'};
+  color: ${props => props.$active ? props.theme.colors.background : props.theme.colors.textMuted};
   padding: 6px 12px;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
   
   &:hover {
-    background: #4a5568;
-    color: #63b3ed;
+    background: ${props => props.theme.colors.buttonHover};
+    color: ${props => props.theme.colors.primary};
   }
 `;
 
-const StepGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  gap: 4px;
+const StepsContainer = styled.div`
   margin-bottom: 12px;
 `;
 
-const Step = styled.div<{ $active: boolean; value: number }>`
-  height: ${props => 30 + (props.value * 0.4)}px;
-  background: ${props => props.$active ? '#63b3ed' : '#4a5568'};
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
+const StepGrid = styled.div`
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  gap: 6px;
+  justify-content: space-between;
+`;
+
+const StepColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  user-select: none;
+`;
+
+const StepBar = styled.div`
+  width: 100%;
+  height: 120px;
+  background: ${props => `linear-gradient(to bottom, ${props.theme.colors.primary}20 0%, ${props.theme.colors.primary}10 100%)`};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
+  position: relative;
+  cursor: crosshair;
+  transition: border-color 0.2s;
   
   &:hover {
-    background: ${props => props.$active ? '#4299e1' : '#718096'};
-  }
-  
-  &::after {
-    content: '${props => props.value}';
-    font-size: 0.6rem;
-    color: #1a202c;
-    font-weight: bold;
-    padding-bottom: 2px;
+    border-color: ${props => props.theme.colors.primary};
   }
 `;
 
+const StepFill = styled.div<{ $value: number }>`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: ${props => props.$value}%;
+  background: ${props => `linear-gradient(to top, ${props.theme.colors.primary} 0%, ${props.theme.colors.accent} 100%)`};
+  border-radius: 0 0 3px 3px;
+  pointer-events: none;
+  transition: height 0.05s ease-out;
+`;
+
+const StepLabel = styled.div`
+  color: ${props => props.theme.colors.textMuted};
+  font-size: 0.65rem;
+  text-align: center;
+  min-width: 20px;
+`;
+
+const StepValue = styled.div`
+  color: ${props => props.theme.colors.text};
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-align: center;
+  min-height: 18px;
+`;
+
 const SeqControls = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 12px;
-  align-items: start;
-  margin-top: 12px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
 `;
 
 const ControlGroup = styled.div`
@@ -88,175 +133,208 @@ const ControlGroup = styled.div`
 `;
 
 const ControlLabel = styled.label`
-  color: #a0aec0;
+  color: ${props => props.theme.colors.textMuted};
   font-size: 0.65rem;
   text-transform: uppercase;
+  white-space: nowrap;
 `;
 
 const Select = styled.select`
-  background: #4a5568;
-  border: 1px solid #2d3748;
+  background: ${props => props.theme.colors.button};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
-  color: #e2e8f0;
-  padding: 6px;
+  color: ${props => props.theme.colors.text};
+  padding: 6px 8px;
   font-size: 0.75rem;
-  width: 100%;
+  min-width: 80px;
   
   &:focus {
     outline: none;
-    border-color: #63b3ed;
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-`;
-
-const ActionButton = styled.button`
-  background: #4a5568;
-  border: none;
-  border-radius: 4px;
-  color: #e2e8f0;
-  padding: 6px 12px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  
-  &:hover {
-    background: #63b3ed;
-    color: #1a202c;
+    border-color: ${props => props.theme.colors.primary};
   }
 `;
 
 /**
  * Composant SeqEditor
  * Gère les 2 séquenceurs à pas (Step Sequencers) du PreenFM3
+ * Structure firmware:
+ * - 16 steps avec valeurs 0-100
+ * - Gate global (0-1, représenté en % 0-100%)
+ * - Sync mode: Internal (BPM) ou External (MIDI Clock)
+ * - BPM: 10-240 (utilisé si syncMode = 'Int')
+ * - MIDI Clock mode: C/16, Ck/8, Ck/4, Ck/2, Ck, Ck*2, Ck*3, Ck*4, Ck*8 (utilisé si syncMode = 'Ext')
  */
 export const SeqEditor: React.FC = () => {
   const [activeSeq, setActiveSeq] = useState<0 | 1>(0);
+  const [isDrawing, setIsDrawing] = useState(false);
   const seq = useStepSequencer(activeSeq);
+  const { theme } = useThemeStore();
+  
+  // État local pour un dessin fluide, synchronisé avec le store uniquement à la fin
+  const [localSteps, setLocalSteps] = useState<number[] | null>(null);
+  const displaySteps = localSteps || seq.steps;
 
-  const handleStepClick = (index: number) => {
-    const newGate = [...seq.gate];
-    newGate[index] = !newGate[index];
-    updateStepSequencer(activeSeq, { gate: newGate });
+  // Synchroniser l'état local quand on change de séquenceur
+  React.useEffect(() => {
+    setLocalSteps(null);
+  }, [activeSeq]);
+
+  const calculateValueFromMouseY = (e: React.MouseEvent<HTMLDivElement>, rect: DOMRect) => {
+    const y = e.clientY - rect.top;
+    const height = rect.height;
+    const value = Math.round(100 - (y / height) * 100);
+    return Math.max(0, Math.min(100, value));
   };
 
-  const handleStepValueChange = (index: number, delta: number) => {
+  const handleMouseDown = () => {
+    setIsDrawing(true);
+    setLocalSteps([...seq.steps]); // Copie locale pour le dessin
+  };
+
+  const handleMouseUp = () => {
+    setIsDrawing(false);
+    // Synchroniser avec le store uniquement à la fin
+    if (localSteps) {
+      updateStepSequencer(activeSeq, { steps: localSteps });
+      setLocalSteps(null);
+    }
+  };
+
+  const handleStepMouseEnter = (index: number, e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDrawing || !localSteps) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const value = calculateValueFromMouseY(e, rect);
+    
+    // Mise à jour locale uniquement (pas de store)
+    const newSteps = [...localSteps];
+    newSteps[index] = value;
+    setLocalSteps(newSteps);
+  };
+
+  const handleStepClick = (index: number, e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const value = calculateValueFromMouseY(e, rect);
+    
+    // Mise à jour immédiate du store pour un simple clic
     const newSteps = [...seq.steps];
-    newSteps[index] = Math.max(0, Math.min(100, newSteps[index] + delta));
+    newSteps[index] = value;
     updateStepSequencer(activeSeq, { steps: newSteps });
   };
 
-  const randomizeSteps = () => {
-    const newSteps = Array(16).fill(0).map(() => Math.floor(Math.random() * 101));
-    updateStepSequencer(activeSeq, { steps: newSteps });
-  };
+  React.useEffect(() => {
+    if (isDrawing) {
+      const handleGlobalMouseUp = () => {
+        setIsDrawing(false);
+        if (localSteps) {
+          updateStepSequencer(activeSeq, { steps: localSteps });
+          setLocalSteps(null);
+        }
+      };
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+      return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+    }
+  }, [isDrawing, localSteps, activeSeq]);
 
-  const clearSteps = () => {
-    const newSteps = Array(16).fill(50);
-    const newGate = Array(16).fill(true);
-    updateStepSequencer(activeSeq, { steps: newSteps, gate: newGate });
-  };
-
-  const gateModes: StepSeqGateMode[] = ['Gate', 'Trigger', 'Hold'];
-  const directions: StepSeqDirection[] = ['Forward', 'Backward', 'PingPong', 'Random'];
+  const syncModes: StepSeqSyncMode[] = ['Int', 'Ext'];
 
   return (
     <SeqContainer>
-      <SeqTitle>Step Sequencer</SeqTitle>
-      
-      <SeqTabs>
-        {([0, 1] as const).map((seqNum) => (
-          <SeqTab
-            key={seqNum}
-            $active={activeSeq === seqNum}
-            onClick={() => setActiveSeq(seqNum)}
-          >
-            Seq {seqNum + 1}
-          </SeqTab>
-        ))}
-      </SeqTabs>
+      <HeaderRow>
+        <TitleTabGroup>
+          <SeqTitle>Step Sequencer</SeqTitle>
+          <SeqTabs>
+            {([0, 1] as const).map((seqNum) => (
+              <SeqTab
+                key={seqNum}
+                $active={activeSeq === seqNum}
+                onClick={() => setActiveSeq(seqNum)}
+              >
+                Seq {seqNum + 1}
+              </SeqTab>
+            ))}
+          </SeqTabs>
+        </TitleTabGroup>
+      </HeaderRow>
 
-      <ButtonGroup>
-        <ActionButton onClick={randomizeSteps}>Randomize</ActionButton>
-        <ActionButton onClick={clearSteps}>Clear</ActionButton>
-      </ButtonGroup>
-
-      <StepGrid>
-        {seq.steps.map((value, index) => (
-          <Step
-            key={index}
-            $active={seq.gate[index]}
-            value={value}
-            onClick={() => handleStepClick(index)}
-            onWheel={(e) => {
-              e.preventDefault();
-              handleStepValueChange(index, e.deltaY > 0 ? -5 : 5);
-            }}
-            title={`Step ${index + 1}: ${value}`}
-          />
-        ))}
-      </StepGrid>
+      <StepsContainer onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
+        <StepGrid>
+          {displaySteps.map((value, index) => (
+            <StepColumn key={index}>
+              <StepValue>{value}</StepValue>
+              <StepBar
+                onClick={(e) => handleStepClick(index, e)}
+                onMouseEnter={(e) => handleStepMouseEnter(index, e)}
+                title={`Step ${index + 1}: ${value}`}
+              >
+                <StepFill $value={value} />
+              </StepBar>
+              <StepLabel>{index + 1}</StepLabel>
+            </StepColumn>
+          ))}
+        </StepGrid>
+      </StepsContainer>
 
       <SeqControls>
         <ControlGroup>
           <KnobBase
             size={50}
             min={0}
-            max={100}
-            step={0.1}
-            value={seq.bpm}
-            onChange={(bpm) => updateStepSequencer(activeSeq, { bpm })}
+            max={1}
+            step={0.01}
+            value={seq.gate}
+            onChange={(gate) => updateStepSequencer(activeSeq, { gate })}
             color="#9F7AEA"
-            backgroundColor="#2d3748"
-            strokeColor="#4a5568"
-            renderLabel={(v) => v.toFixed(1)}
-            label="BPM"
+            backgroundColor={theme.colors.knobBackground}
+            strokeColor={theme.colors.knobStroke}
+            renderLabel={(v) => `${(v * 100).toFixed(0)}%`}
+            label="Gate"
           />
         </ControlGroup>
 
         <ControlGroup>
-          <KnobBase
-            size={50}
-            min={1}
-            max={16}
-            step={1}
-            value={seq.length}
-            onChange={(length) => updateStepSequencer(activeSeq, { length })}
-            color="#48BB78"
-            backgroundColor="#2d3748"
-            strokeColor="#4a5568"
-            renderLabel={(v) => Math.round(v)}
-            label="Steps"
-          />
-        </ControlGroup>
-
-        <ControlGroup>
-          <ControlLabel>Gate Mode</ControlLabel>
+          <ControlLabel>Sync</ControlLabel>
           <Select 
-            value={seq.gateMode}
-            onChange={(e) => updateStepSequencer(activeSeq, { gateMode: e.target.value as StepSeqGateMode })}
+            value={seq.syncMode}
+            onChange={(e) => updateStepSequencer(activeSeq, { syncMode: e.target.value as StepSeqSyncMode })}
           >
-            {gateModes.map(mode => (
-              <option key={mode} value={mode}>{mode}</option>
+            {syncModes.map(mode => (
+              <option key={mode} value={mode}>{mode === 'Int' ? 'Internal' : 'External'}</option>
             ))}
           </Select>
         </ControlGroup>
 
-        <ControlGroup>
-          <ControlLabel>Direction</ControlLabel>
-          <Select 
-            value={seq.direction}
-            onChange={(e) => updateStepSequencer(activeSeq, { direction: e.target.value as StepSeqDirection })}
-          >
-            {directions.map(dir => (
-              <option key={dir} value={dir}>{dir}</option>
-            ))}
-          </Select>
-        </ControlGroup>
+        {seq.syncMode === 'Int' && (
+          <ControlGroup>
+            <KnobBase
+              size={50}
+              min={10}
+              max={240}
+              step={1}
+              value={seq.bpm}
+              onChange={(bpm) => updateStepSequencer(activeSeq, { bpm })}
+              color="#48BB78"
+              backgroundColor={theme.colors.knobBackground}
+              strokeColor={theme.colors.knobStroke}
+              renderLabel={(v) => Math.round(v)}
+              label="BPM"
+            />
+          </ControlGroup>
+        )}
+
+        {seq.syncMode === 'Ext' && (
+          <ControlGroup>
+            <ControlLabel>MIDI Clock</ControlLabel>
+            <Select 
+              value={seq.midiClockMode}
+              onChange={(e) => updateStepSequencer(activeSeq, { midiClockMode: e.target.value as StepSeqMidiClockMode })}
+            >
+              {STEP_SEQ_MIDI_CLOCK_MODES.map(mode => (
+                <option key={mode} value={mode}>{mode}</option>
+              ))}
+            </Select>
+          </ControlGroup>
+        )}
       </SeqControls>
     </SeqContainer>
   );

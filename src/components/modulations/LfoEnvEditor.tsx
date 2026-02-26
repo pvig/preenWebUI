@@ -4,16 +4,18 @@ import KnobBase from '../knobs/KnobBase';
 import { useLfoEnvelope, updateLfoEnvelope } from '../../stores/patchStore';
 import type { LfoEnvLoopMode } from '../../types/modulation';
 import { EnvelopeVisualizer, type EnvelopeDataADSR, type EnvelopeDataSAR } from './EnvelopeVisualizer';
+import { useThemeStore } from '../../theme/themeStore';
 
 const EnvContainer = styled.div`
-  background: #2d3748;
+  background: ${props => props.theme.colors.panel};
   border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: 12px;
+  margin-bottom: 16px;
+  border: 1px solid ${props => props.theme.colors.border};
 `;
 
 const EnvTitle = styled.h3`
-  color: #e2e8f0;
+  color: ${props => props.theme.colors.text};
   font-size: 1rem;
   margin: 0 0 15px 0;
   text-transform: uppercase;
@@ -27,18 +29,18 @@ const EnvTabs = styled.div`
 `;
 
 const EnvTab = styled.button<{ $active: boolean }>`
-  background: ${props => props.$active ? '#4a5568' : '#1a202c'};
-  border: none;
+  background: ${props => props.$active ? props.theme.colors.buttonActive : props.theme.colors.background};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
-  color: ${props => props.$active ? '#63b3ed' : '#a0aec0'};
-  padding: 8px 16px;
-  font-size: 0.875rem;
+  color: ${props => props.$active ? props.theme.colors.background : props.theme.colors.textMuted};
+  padding: 6px 12px;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
   
   &:hover {
-    background: #4a5568;
-    color: #63b3ed;
+    background: ${props => props.theme.colors.buttonHover};
+    color: ${props => props.theme.colors.primary};
   }
 `;
 
@@ -57,23 +59,23 @@ const ControlGroup = styled.div`
 `;
 
 const ControlLabel = styled.label`
-  color: #a0aec0;
+  color: ${props => props.theme.colors.textMuted};
   font-size: 0.75rem;
   text-transform: uppercase;
 `;
 
 const Select = styled.select`
-  background: #4a5568;
-  border: 1px solid #2d3748;
+  background: ${props => props.theme.colors.button};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
-  color: #e2e8f0;
+  color: ${props => props.theme.colors.text};
   padding: 8px;
   font-size: 0.875rem;
   width: 100%;
   
   &:focus {
     outline: none;
-    border-color: #63b3ed;
+    border-color: ${props => props.theme.colors.primary};
   }
 `;
 
@@ -85,6 +87,7 @@ const Select = styled.select`
 export const LfoEnvEditor: React.FC = () => {
   const [activeEnv, setActiveEnv] = useState<0 | 1>(0);
   const env = useLfoEnvelope(activeEnv);
+  const { theme } = useThemeStore();
 
   const loopModes: LfoEnvLoopMode[] = [
     'Off',
@@ -217,8 +220,8 @@ export const LfoEnvEditor: React.FC = () => {
                   adsr: { ...env.adsr, attack: { ...env.adsr.attack, time } } 
                 })}
                 color="#F56565"
-                backgroundColor="#2d3748"
-                strokeColor="#4a5568"
+                backgroundColor={theme.colors.knobBackground}
+                strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Attack"
               />
@@ -235,8 +238,8 @@ export const LfoEnvEditor: React.FC = () => {
                   adsr: { ...env.adsr, attack: { ...env.adsr.attack, level } } 
                 })}
                 color="#F6AD55"
-                backgroundColor="#2d3748"
-                strokeColor="#4a5568"
+                backgroundColor={theme.colors.knobBackground}
+                strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => Math.round(v)}
                 label="Atk Level"
               />
@@ -253,8 +256,8 @@ export const LfoEnvEditor: React.FC = () => {
                   adsr: { ...env.adsr, decay: { ...env.adsr.decay, time } } 
                 })}
                 color="#48BB78"
-                backgroundColor="#2d3748"
-                strokeColor="#4a5568"
+                backgroundColor={theme.colors.knobBackground}
+                strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Decay"
               />
@@ -275,8 +278,8 @@ export const LfoEnvEditor: React.FC = () => {
                   } 
                 })}
                 color="#4299E1"
-                backgroundColor="#2d3748"
-                strokeColor="#4a5568"
+                backgroundColor={theme.colors.knobBackground}
+                strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => Math.round(v)}
                 label="Dec Level"
               />
@@ -293,8 +296,8 @@ export const LfoEnvEditor: React.FC = () => {
                   adsr: { ...env.adsr, sustain: { ...env.adsr.sustain, time } } 
                 })}
                 color="#9F7AEA"
-                backgroundColor="#2d3748"
-                strokeColor="#4a5568"
+                backgroundColor={theme.colors.knobBackground}
+                strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Sustain"
               />
@@ -313,8 +316,8 @@ export const LfoEnvEditor: React.FC = () => {
                   adsr: { ...env.adsr, release: { ...env.adsr.release, time } } 
                 })}
                 color="#63B3ED"
-                backgroundColor="#2d3748"
-                strokeColor="#4a5568"
+                backgroundColor={theme.colors.knobBackground}
+                strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Release"
               />
@@ -332,8 +335,8 @@ export const LfoEnvEditor: React.FC = () => {
                 value={env.silence}
                 onChange={(silence) => updateLfoEnvelope(activeEnv, { silence })}
                 color="#9CA3AF"
-                backgroundColor="#2d3748"
-                strokeColor="#4a5568"
+                backgroundColor={theme.colors.knobBackground}
+                strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Silence"
               />
@@ -350,8 +353,8 @@ export const LfoEnvEditor: React.FC = () => {
                   adsr: { ...env.adsr, attack: { time, level: 100 } }  // Level fixed at 100
                 })}
                 color="#F56565"
-                backgroundColor="#2d3748"
-                strokeColor="#4a5568"
+                backgroundColor={theme.colors.knobBackground}
+                strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Attack"
               />
@@ -368,8 +371,8 @@ export const LfoEnvEditor: React.FC = () => {
                   adsr: { ...env.adsr, decay: { time, level: 0 } }  // Level fixed at 0
                 })}
                 color="#63B3ED"
-                backgroundColor="#2d3748"
-                strokeColor="#4a5568"
+                backgroundColor={theme.colors.knobBackground}
+                strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Release"
               />

@@ -2,6 +2,7 @@ import { useCurrentPatch, updateOperator } from '../../stores/patchStore';
 import KnobBase from '../knobs/KnobBase';
 import styled from 'styled-components';
 import { useFMSynthContext } from './FMSynthContext';
+import { useThemeStore } from '../../theme/themeStore';
 
 const ControlsContainer = styled.div`
   display: flex;
@@ -9,7 +10,7 @@ const ControlsContainer = styled.div`
   justify-content: center;
   gap: 20px;
   padding: 20px;
-  background: #1a202c;
+  background: ${props => props.theme.colors.background};
 `;
 
 const OperatorControl = styled.div<{ $isHighlighted?: boolean }>`
@@ -18,14 +19,14 @@ const OperatorControl = styled.div<{ $isHighlighted?: boolean }>`
   align-items: center;
   gap: 10px;
   padding: 15px;
-  background: #2d3748;
+  background: ${props => props.theme.colors.panel};
   border-radius: 6px;
-  border: 2px solid transparent;
+  border: 2px solid ${props => props.theme.colors.border};
   transition: border-color 3s ease, box-shadow 3s ease;
   
   ${props => props.$isHighlighted && `
-    border-color: #fbbf24;
-    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+    border-color: ${props.theme.colors.highlight};
+    box-shadow: 0 0 20px ${props.theme.colors.highlightGlow};
     transition: border-color 0.03s ease, box-shadow 0.03s ease;
   `}
 `;
@@ -64,11 +65,12 @@ const CarrierControls = () => {
   const currentAlgorithm = currentPatch.algorithm;
   const carriers = currentAlgorithm?.ops?.filter(op => op.type === 'CARRIER') || [];
   const { setHighlightedNode, highlightedNode } = useFMSynthContext();
+  const { theme } = useThemeStore();
 
   if (carriers.length === 0) {
     return (
       <ControlsContainer>
-        <div style={{ color: '#a0aec0', textAlign: 'center' }}>
+        <div style={{ color: theme.colors.textMuted, textAlign: 'center' }}>
           No carrier operators in current algorithm
         </div>
       </ControlsContainer>
@@ -96,8 +98,8 @@ const CarrierControls = () => {
               value={operator?.amplitude ?? 0}
               onChange={val => updateOperator(id, { amplitude: val })}
               color="#68D391"
-              backgroundColor="#2d3748"
-              strokeColor="#4a5568"
+              backgroundColor={theme.colors.knobBackground}
+              strokeColor={theme.colors.knobStroke}
               renderLabel={(val) => Math.round(val)}
               label="Volume"
             />

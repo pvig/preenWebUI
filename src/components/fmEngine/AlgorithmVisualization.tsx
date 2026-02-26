@@ -4,6 +4,7 @@ import type { Algorithm } from '../../types/patch';
 import { ALGO_DIAGRAMS } from '../../algo/algorithms.static';
 import { renderAlgoSvg } from '../../algo/renderAlgoSvg';
 import { useFMSynthContext } from './FMSynthContext';
+import { useThemeStore } from '../../theme/themeStore';
 
 const VisualizationContainer = styled.div`
   width: 280px;
@@ -12,7 +13,7 @@ const VisualizationContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 20px; /* Espacement autour du SVG */
-  background: #0b1020; /* Même couleur que le fond du SVG */
+  background: ${props => props.theme.colors.background};
   
   svg {
     max-width: 100%;
@@ -27,6 +28,7 @@ interface AlgorithmVisualizationProps {
 export const AlgorithmVisualization = ({ algorithm }: AlgorithmVisualizationProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { highlightedLink, highlightedNode } = useFMSynthContext();
+  const { theme } = useThemeStore();
 
   // Effet 1: Render initial du SVG (seulement quand l'algorithme change)
   useEffect(() => {
@@ -35,13 +37,13 @@ export const AlgorithmVisualization = ({ algorithm }: AlgorithmVisualizationProp
     const diagram = ALGO_DIAGRAMS.find(d => d.id === String(algorithm.id));
     
     if (!diagram) {
-      containerRef.current.innerHTML = `<p style="color: #cbd5e0;">Algorithm ${algorithm.id} not found</p>`;
+      containerRef.current.innerHTML = `<p style="color: ${theme.colors.textMuted};">Algorithm ${algorithm.id} not found</p>`;
       return;
     }
 
-    const svg = renderAlgoSvg(diagram, {});
+    const svg = renderAlgoSvg(diagram, { theme });
     containerRef.current.innerHTML = svg;
-  }, [algorithm.id]);
+  }, [algorithm.id, theme]);
 
   // Effet 2: Mise à jour des classes pour highlighted link
   useEffect(() => {

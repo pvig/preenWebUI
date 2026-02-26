@@ -1,4 +1,5 @@
 import React from "react";
+import styled from 'styled-components';
 
 import AdsrControl from './operator/AdsrControl';
 import { WaveformSelector } from './operator/WaveformSelector';
@@ -7,6 +8,30 @@ import { FrequencyKnob } from './operator/FrequencyKnob';
 import { KeyboardTrackingSelect } from './operator/KeyboardTrackingSelect';
 import { useOperator, updateOperator } from '../../stores/patchStore';
 import { useFMSynthContext } from './FMSynthContext';
+
+const PanelContainer = styled.div<{ $isHighlighted?: boolean }>`
+  background-color: ${props => props.theme.colors.panel};
+  padding: 15px;
+  border-radius: 8px;
+  border: 2px solid ${props => props.$isHighlighted ? props.theme.colors.highlight : props.theme.colors.border};
+  box-shadow: ${props => props.$isHighlighted ? `0 0 20px ${props.theme.colors.highlightGlow}` : 'none'};
+  transition: ${props => props.$isHighlighted ? 'border-color 0.03s ease, box-shadow 0.03s ease' : 'border-color 0.5s ease, box-shadow 0.5s ease'};
+  margin: 10px;
+  
+  h3 {
+    margin: 0 0 15px 0;
+    color: ${props => props.theme.colors.text};
+    font-size: 1rem;
+    text-align: center;
+  }
+`;
+
+const ControlsRow = styled.div`
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 10px;
+`;
 
 interface OperatorPanelProps {
   opNumber: number;
@@ -19,14 +44,14 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
   const isHighlighted = highlightedNode === opNumber;
 
   return (
-    <div 
-      className={`operator-panel ${opNumber === selectedOperator?.id ? 'active' : ''} ${isHighlighted ? 'highlighted' : ''}`}
+    <PanelContainer
+      $isHighlighted={isHighlighted}
       onMouseEnter={() => setHighlightedNode(opNumber)}
       onMouseLeave={() => setHighlightedNode(null)}
     >
       <h3>Operator {opNumber}</h3>
 
-      <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+      <ControlsRow>
         <FrequencyKnob 
         label="Frequency" 
         value={selectedOperator?.frequency ?? 0}
@@ -39,11 +64,11 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
         min={-9} max={9} 
         onChange={val => updateOperator(opId, { detune: val })}
         />
-      </div>
+      </ControlsRow>
 
       <AdsrControl operatorId={opId} />
 
-      <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+      <ControlsRow>
         <WaveformSelector
           value={selectedOperator?.waveform}
           onChange={(waveform) => updateOperator(opId, { waveform })}
@@ -52,9 +77,9 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
           value={selectedOperator?.keyboardTracking ?? 1}
           onChange={(keyboardTracking) => updateOperator(opId, { keyboardTracking })}
         />
-      </div>
+      </ControlsRow>
 
-    </div>
+    </PanelContainer>
   );
 };
 

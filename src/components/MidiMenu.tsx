@@ -1,9 +1,191 @@
-import '../assets/css/MidiMenu.css';
+import styled from 'styled-components';
 import { usePreenFM3Midi } from '../midi/usePreenFM3Midi';
 import { requestPatchDump } from '../midi/midiService';
 import { useCurrentPatch, usePatchStore, updateOperator } from '../stores/patchStore';
 import { PreenFM3Parser } from '../midi/preenFM3Parser';
 import { useState, useRef } from 'react';
+
+const MidiMenuContainer = styled.div`
+  background: ${props => props.theme.colors.panel};
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+`;
+
+const MidiPorts = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  
+  h3 {
+    color: ${props => props.theme.colors.text};
+  }
+`;
+
+const MidiPortSelect = styled.div`
+  margin: 0.5rem;
+  
+  label {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: ${props => props.theme.colors.text};
+  }
+  
+  select {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background: ${props => props.theme.colors.button};
+    color: ${props => props.theme.colors.text};
+    border: 1px solid ${props => props.theme.colors.border};
+    cursor: pointer;
+    
+    &:focus {
+      outline: none;
+      border-color: ${props => props.theme.colors.primary};
+    }
+  }
+`;
+
+const MidiActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem;
+`;
+
+const MidiButton = styled.button`
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  background: ${props => props.theme.colors.primary};
+  color: ${props => props.theme.colors.background};
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 500;
+  
+  &:hover:not(:disabled) {
+    background: ${props => props.theme.colors.buttonHover || props.theme.colors.accent};
+  }
+  
+  &:disabled {
+    background: ${props => props.theme.colors.button};
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+`;
+
+const MidiStatus = styled.div`
+  display: flex;
+  align-items: center;
+  margin: 0.5rem;
+`;
+
+const StatusIndicator = styled.div<{ $connected?: boolean }>`
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: ${props => props.$connected ? '#065f46' : props.theme.colors.button};
+  color: ${props => props.$connected ? '#d1fae5' : props.theme.colors.text};
+`;
+
+const ErrorMessage = styled.p`
+  color: ${props => props.theme.colors.accent};
+  margin: 0.5rem;
+  padding: 0.5rem;
+  background: ${props => `${props.theme.colors.accent}20`};
+  border-radius: 0.25rem;
+`;
+
+const ErrorContainer = styled.div`
+  padding: 1rem;
+`;
+
+const HelpContainer = styled.div`
+  margin-top: 1rem;
+  padding: 1rem;
+  background: ${props => props.theme.colors.background};
+  border-radius: 0.5rem;
+  border-left: 3px solid ${props => props.theme.colors.primary};
+  
+  h4 {
+    margin: 0 0 0.75rem 0;
+    color: ${props => props.theme.colors.primary};
+    font-size: 1rem;
+  }
+  
+  p {
+    color: ${props => props.theme.colors.textSecondary};
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  
+  ol {
+    margin: 0.75rem 0;
+    padding-left: 1.5rem;
+    color: ${props => props.theme.colors.text};
+    
+    li {
+      margin: 0.5rem 0;
+      font-size: 0.875rem;
+    }
+  }
+`;
+
+const HelpNote = styled.p`
+  padding: 0.5rem;
+  background: ${props => `${props.theme.colors.primary}20`};
+  border-radius: 0.25rem;
+  margin: 0.5rem 0 !important;
+  
+  code {
+    background: ${props => props.theme.colors.button};
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    color: ${props => props.theme.colors.primary};
+    font-size: 0.8125rem;
+  }
+`;
+
+const InfoBox = styled.div`
+  margin: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(237, 137, 54, 0.1);
+  border-left: 3px solid #ed8936;
+  border-radius: 0.25rem;
+  
+  p {
+    margin: 0.25rem 0;
+    color: ${props => props.theme.colors.text};
+    font-size: 0.875rem;
+  }
+`;
+
+const InfoDetail = styled.p`
+  color: ${props => props.theme.colors.textMuted} !important;
+  font-size: 0.8125rem !important;
+`;
+
+const ReceptionStatus = styled.div`
+  margin: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-left: 3px solid #10b981;
+  border-radius: 0.25rem;
+  
+  p {
+    margin: 0.25rem 0;
+    color: #d1fae5;
+    font-size: 0.875rem;
+  }
+`;
+
+const PatchName = styled.p`
+  color: #6ee7b7 !important;
+  font-weight: 500 !important;
+`;
 
 export const MidiMenu = () => {
   const midi = usePreenFM3Midi();
@@ -106,18 +288,18 @@ export const MidiMenu = () => {
 
   if (midi.isLoading) {
     return (
-      <div className="midi-menu">
+      <MidiMenuContainer>
         <p>Initialisation MIDI...</p>
-      </div>
+      </MidiMenuContainer>
     );
   }
 
   if (midi.error) {
     return (
-      <div className="midi-menu">
-        <div className="midi-error-container">
-          <p className="error">❌ {midi.error}</p>
-          <div className="midi-help">
+      <MidiMenuContainer>
+        <ErrorContainer>
+          <ErrorMessage>❌ {midi.error}</ErrorMessage>
+          <HelpContainer>
             <h4>Web MIDI API requis</h4>
             <p>Pour utiliser la connexion MIDI avec le PreenFM3, vous devez :</p>
             <ol>
@@ -125,33 +307,33 @@ export const MidiMenu = () => {
               <li>Autoriser l'accès MIDI dans les permissions du site</li>
               <li>Connecter votre PreenFM3 via USB</li>
             </ol>
-            <p className="help-note">
+            <HelpNote>
               💡 <strong>Chrome/Edge/Brave :</strong> Cliquez sur l'icône de cadenas dans la barre d'adresse → 
               Paramètres du site → Autorisez "Périphériques MIDI"
-            </p>
-            <p className="help-note">
+            </HelpNote>
+            <HelpNote>
               💡 <strong>Firefox :</strong> Tapez <code>about:config</code> → 
               Recherchez <code>dom.webmidi.enabled</code> → Activez-le (support expérimental)
-            </p>
-          </div>
-        </div>
-      </div>
+            </HelpNote>
+          </HelpContainer>
+        </ErrorContainer>
+      </MidiMenuContainer>
     );
   }
 
   const noDevices = !midi.devices || (midi.devices.inputs.length === 0 && midi.devices.outputs.length === 0);
 
   return (
-    <div className="midi-menu">
+    <MidiMenuContainer>
       {noDevices && (
-        <div className="midi-info">
+        <InfoBox>
           <p>⚠️ Aucun périphérique MIDI détecté</p>
-          <p className="info-detail">Connectez votre PreenFM3 via USB et actualisez la page</p>
-        </div>
+          <InfoDetail>Connectez votre PreenFM3 via USB et actualisez la page</InfoDetail>
+        </InfoBox>
       )}
       
-      <div className="midi-ports">
-        <div className="midi-port-select">
+      <MidiPorts>
+        <MidiPortSelect>
           <label>
             Entrée MIDI:
             <select 
@@ -169,9 +351,9 @@ export const MidiMenu = () => {
               ))}
             </select>
           </label>
-        </div>
+        </MidiPortSelect>
 
-        <div className="midi-port-select">
+        <MidiPortSelect>
           <label>
             Sortie MIDI:
             <select 
@@ -189,9 +371,9 @@ export const MidiMenu = () => {
               ))}
             </select>
           </label>
-        </div>
+        </MidiPortSelect>
 
-        <div className="midi-port-select">
+        <MidiPortSelect>
           <label>
             Canal MIDI:
             <select 
@@ -205,43 +387,41 @@ export const MidiMenu = () => {
               ))}
             </select>
           </label>
-        </div>
-      </div>
+        </MidiPortSelect>
+      </MidiPorts>
 
       {receivedCount > 0 && (
-        <div className="midi-reception-status">
+        <ReceptionStatus>
           <p>📥 Réception: {receivedCount} paramètres</p>
-          {receivedName && <p className="patch-name">Patch: "{receivedName}"</p>}
-        </div>
+          {receivedName && <PatchName>Patch: "{receivedName}"</PatchName>}
+        </ReceptionStatus>
       )}
 
-      <div className="midi-actions">
-        <button 
+      <MidiActions>
+        <MidiButton 
           onClick={sendPatch}
           disabled={!midi.selectedOutput}
-          className="midi-button"
           title="Envoyer le patch actuel vers le PreenFM3"
         >
           Push → PreenFM
-        </button>
+        </MidiButton>
         
-        <button 
+        <MidiButton 
           onClick={receivePatch}
           disabled={!midi.selectedInput}
-          className="midi-button"
           title="Récupérer le patch actuel depuis le PreenFM3"
         >
           Pull ← PreenFM
-        </button>
-      </div>
+        </MidiButton>
+      </MidiActions>
 
       {midi.enabled && (midi.selectedInput || midi.selectedOutput) && (
-        <div className="midi-status">
-          <div className="status-indicator connected">
+        <MidiStatus>
+          <StatusIndicator $connected>
             ● Connecté
-          </div>
-        </div>
+          </StatusIndicator>
+        </MidiStatus>
       )}
-    </div>
+    </MidiMenuContainer>
   );
 };

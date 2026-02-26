@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
+import { useThemeStore } from '../../theme/themeStore';
 
 const Container = styled.div`
   width: 100%;
   height: 200px;
-  background: #1a202c;
+  background: ${props => props.theme.colors.background};
   border-radius: 8px;
+  border: 1px solid ${props => props.theme.colors.border};
   position: relative;
   user-select: none;
   cursor: crosshair;
@@ -29,7 +31,7 @@ const ValueLabel = styled.div<{ $highlighted?: boolean }>`
   display: flex;
   align-items: center;
   gap: 10px;
-  color: ${props => props.$highlighted ? '#fbbf24' : '#e2e8f0'};
+  color: ${props => props.$highlighted ? props.theme.colors.highlight : props.theme.colors.text};
   font-size: 0.75rem;
   font-family: monospace;
   transition: color 0.2s;
@@ -88,6 +90,7 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const { theme } = useThemeStore();
   
   const isEnv1 = type === 'env1';
 
@@ -396,7 +399,7 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
         y1={MARGIN.top}
         x2={x}
         y2={height - MARGIN.bottom}
-        stroke="#4a5568"
+        stroke={theme.colors.border}
         strokeWidth="1"
       />
     );
@@ -412,7 +415,7 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
         y1={y}
         x2={width - MARGIN.right}
         y2={y}
-        stroke="#4a5568"
+        stroke={theme.colors.border}
         strokeWidth="1"
       />
     );
@@ -450,18 +453,18 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
           width={graphWidth}
           height={graphHeight}
           fill="none"
-          stroke="#4a5568"
+          stroke={theme.colors.border}
           strokeWidth="2"
         />
 
         {/* Fill under envelope */}
-        <path d={fillPathData} fill="rgba(187, 187, 187, 0.2)" />
+        <path d={fillPathData} fill={`${theme.colors.primary}30`} />
 
         {/* Envelope line */}
         <path
           d={pathData}
           fill="none"
-          stroke="#e2e8f0"
+          stroke={theme.colors.textSecondary}
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -482,7 +485,7 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
                   y1={MARGIN.top}
                   x2={activePointPos.x}
                   y2={height - MARGIN.bottom}
-                  stroke="#fbbf24"
+                  stroke={theme.colors.highlight}
                   strokeWidth="1"
                   strokeDasharray="4 2"
                 />
@@ -493,7 +496,7 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
                   y1={activePointPos.y}
                   x2={width - MARGIN.right}
                   y2={activePointPos.y}
-                  stroke="#fbbf24"
+                  stroke={theme.colors.highlight}
                   strokeWidth="1"
                   strokeDasharray="4 2"
                 />
@@ -507,7 +510,7 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
           const isActive = draggingPoint === name;
           const isHovered = hoveredPoint === name;
           const radius = isActive || isHovered ? ACTIVE_POINT_RADIUS : POINT_RADIUS;
-          const color = isActive || isHovered ? '#fbbf24' : '#e2e8f0';
+          const color = isActive || isHovered ? theme.colors.highlight : theme.colors.textSecondary;
           const fill = isActive ? color : 'none';
 
           return (

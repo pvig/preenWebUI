@@ -22,26 +22,39 @@ export interface LFOEnvelope {
 }
 
 /**
- * Mode de gate pour Step Sequencer
+ * Mode de synchronisation pour Step Sequencer
  */
-export type StepSeqGateMode = 'Gate' | 'Trigger' | 'Hold';
+export type StepSeqSyncMode = 'Int' | 'Ext';
 
 /**
- * Direction de lecture du Step Sequencer
+ * Modes MIDI Clock pour Step Sequencer (synchronisation externe)
+ * Identiques aux modes des LFOs
  */
-export type StepSeqDirection = 'Forward' | 'Backward' | 'PingPong' | 'Random';
+export type StepSeqMidiClockMode = 
+  | 'C/16'   // MIDI Clock / 16
+  | 'Ck/8'   // MIDI Clock / 8
+  | 'Ck/4'   // MIDI Clock / 4
+  | 'Ck/2'   // MIDI Clock / 2
+  | 'Ck'     // MIDI Clock 1:1
+  | 'Ck*2'   // MIDI Clock * 2
+  | 'Ck*3'   // MIDI Clock * 3
+  | 'Ck*4'   // MIDI Clock * 4
+  | 'Ck*8';  // MIDI Clock * 8
+
+export const STEP_SEQ_MIDI_CLOCK_MODES: StepSeqMidiClockMode[] = [
+  'C/16', 'Ck/8', 'Ck/4', 'Ck/2', 'Ck', 'Ck*2', 'Ck*3', 'Ck*4', 'Ck*8'
+];
 
 /**
  * Step Sequencer
- * Séquenceur de pas avec 16 étapes
+ * Séquenceur de pas avec 16 étapes (PreenFM3 firmware structure)
  */
 export interface StepSequencer {
   steps: number[];              // 16 valeurs (0-100)
-  gate: boolean[];              // 16 états gate (on/off)
-  bpm: number;                  // Tempo (0-100)
-  length: number;               // Nombre de steps actifs (1-16)
-  gateMode: StepSeqGateMode;    // Mode gate
-  direction: StepSeqDirection;  // Direction de lecture
+  gate: number;                 // Gate global (0-1, 0-100%)
+  syncMode: StepSeqSyncMode;    // Synchronisation interne ou externe (MIDI Clock)
+  bpm: number;                  // Tempo (10-240) - utilisé si syncMode = 'Int'
+  midiClockMode: StepSeqMidiClockMode;  // Mode MIDI Clock - utilisé si syncMode = 'Ext'
 }
 
 /**
@@ -63,9 +76,8 @@ export const DEFAULT_LFO_ENVELOPE: LFOEnvelope = {
  */
 export const DEFAULT_STEP_SEQUENCER: StepSequencer = {
   steps: Array(16).fill(50),      // Toutes les valeurs à 50
-  gate: Array(16).fill(true),     // Tous les steps actifs
-  bpm: 120,                        // 120 BPM par défaut
-  length: 16,                      // 16 steps par défaut
-  gateMode: 'Gate',
-  direction: 'Forward'
+  gate: 0.5,                      // Gate à 50%
+  syncMode: 'Int',                // Synchronisation interne par défaut
+  bpm: 120,                       // 120 BPM par défaut
+  midiClockMode: 'Ck/4',          // MIDI Clock / 4 par défaut (noires)
 };

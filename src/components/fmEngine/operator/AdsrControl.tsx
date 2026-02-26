@@ -1,7 +1,32 @@
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
+import styled from 'styled-components';
 import { useOperatorEnvelope, updateADSR } from '../../../stores/patchStore';
 import { type AdsrState, type CurveType } from '../../../types/adsr';
+import { useThemeStore } from '../../../theme/themeStore';
+
+const AdsrContainer = styled.div`
+  background: ${props => props.theme.colors.background};
+  margin-top: 10px;
+  border-radius: 4px;
+  overflow: hidden;
+`;
+
+const StyledSvg = styled.svg`
+  width: 100%;
+  height: 100%;
+`;
+
+const Tooltip = styled.div`
+  position: absolute;
+  transform: translate(30px, -30px);
+  background: ${props => props.theme.colors.panel};
+  color: ${props => props.theme.colors.text};
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  box-shadow: 0 2px 8px ${props => props.theme.colors.border};
+`;
 
 interface AdsrControlProps {
   operatorId: number;
@@ -11,6 +36,7 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
   //Console.log("AdsrControl", operatorId);
   const envelope = useOperatorEnvelope(operatorId);
   //console.log("envelope", envelope);
+  const { theme } = useThemeStore();
 
   if (!envelope) return null;
 
@@ -30,12 +56,12 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
   const currentPoints = useRef<Point[]>([]);
   const dragOffset = useRef<{ x: number, y: number } | null>(null);
 
-  // Couleurs distinctes pour chaque point
+  // Couleurs distinctes pour chaque point (depuis le thème)
   const pointColors = {
-    attack: '#FF6B6B', // Rouge
-    decay: '#48BB78',  // Vert
-    sustain: '#4299E1', // Bleu
-    release: '#F6AD55' // Orange
+    attack: theme.colors.adsrAttack,
+    decay: theme.colors.adsrDecay,
+    sustain: theme.colors.adsrSustain,
+    release: theme.colors.adsrRelease
   };
 
   type Point = { x: number; y: number };
@@ -143,7 +169,7 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
       .attr('class', 'grid')
       .call(d3.axisLeft(yScale).ticks(5).tickSize(-width).tickFormat(null))
       .selectAll('.tick line')
-      .attr('stroke', '#666')
+      .attr('stroke', theme.colors.border)
       .attr('stroke-dasharray', '2,2');
 
     // Quadrillage adaptatif : nombre de lignes proportionnel à maxTime
@@ -154,7 +180,7 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
       .attr('transform', `translate(0,${height})`)
       .call(d3.axisBottom(xScale).ticks(numTicks).tickSize(-height).tickFormat(null))
       .selectAll('.tick line')
-      .attr('stroke', '#666')
+      .attr('stroke', theme.colors.border)
       .attr('stroke-dasharray', '2,2');
 
     const lineGenerator = d3.line<Point>()
@@ -165,7 +191,7 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
     lineRef.current = g.append('path')
       .datum(generateFullPath(currentPoints.current))
       .attr('d', lineGenerator)
-      .attr('stroke', '#4f46e5')
+      .attr('stroke', theme.colors.primary)
       .attr('stroke-width', 2)
       .attr('fill', 'none');
 
@@ -185,7 +211,7 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
           y: mouseY - point.y
         };
 
-        d3.select(this).attr('fill', '#F56565');
+        d3.select(this).attr('fill', theme.colors.accent);
       })
       .on('drag', function (event) {
         const key = d3.select(this).attr('data-key');
@@ -306,7 +332,7 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
         .attr('cy', d => yScale(d.y))
         .attr('r', 8)
         .attr('fill', pointColors[key as keyof typeof pointColors])
-        .attr('stroke', 'white')
+        .attr('stroke', theme.colors.background)
         .attr('stroke-width', 2)
         .attr('cursor', 'pointer')
         .attr('data-key', key)
@@ -324,14 +350,14 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
         .call(dragHandler);
     });
 
-  }, [envelope]); // Rafraîchir quand l'enveloppe change
+  }, [envelope, theme]); // Rafraîchir quand l'enveloppe ou le thème change
 
   return (
-    <div>
-      <svg ref={svgRef} className="adsr w-full h-full" />
+    <AdsrContainer>
+      <StyledSvg ref={svgRef} />
       {/* Tooltip pendant le drag */}
       {dragging && (
-        <div className="tooltip">
+        <Tooltip>
           Editing: {dragging} |
           Time: {(
             dragging === 'attack' ? envelope.attack.time :
@@ -343,7 +369,7 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
               dragging === 'decay' ? envelope.decay.level :
                 dragging === 'sustain' ? envelope.sustain.level : envelope.release.level
           )}%
-        </div>
+        </Tooltip>
       )}
       {/* Tooltip au survol */}
       {!dragging && hoverInfo && (
@@ -352,20 +378,21 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
           top: '5px',
           left: '50%',
           transform: 'translateX(-50%)',
-          background: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
+          background: theme.colors.panel,
+          color: theme.colors.textSecondary,
           padding: '4px 8px',
           borderRadius: '4px',
           fontSize: '12px',
           pointerEvents: 'none',
-          zIndex: 1000
+          zIndex: 1000,
+          boxShadow: `0 2px 8px ${theme.colors.border}`
         }}>
           {hoverInfo.key.charAt(0).toUpperCase() + hoverInfo.key.slice(1)} - 
           Time: {hoverInfo.time.toFixed(1)} | 
           Level: {hoverInfo.level.toFixed(1)}%
         </div>
       )}
-    </div>
+    </AdsrContainer>
   );
 }
 

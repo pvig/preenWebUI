@@ -3,14 +3,14 @@ import styled from 'styled-components';
 import { useCurrentPatch, usePatchStore } from '../../stores/patchStore';
 
 const MatrixContainer = styled.div`
-  background: #2d3748;
+  background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
 `;
 
 const MatrixTitle = styled.h3`
-  color: #e2e8f0;
+  color: ${props => props.theme.colors.text};
   font-size: 1rem;
   margin: 0 0 15px 0;
   text-transform: uppercase;
@@ -28,13 +28,13 @@ const MatrixRow = styled.div`
   grid-template-columns: 1fr 1fr 1fr 80px;
   gap: 10px;
   padding: 8px;
-  background: #1a202c;
+  background: ${props => props.theme.colors.background};
   border-radius: 4px;
   align-items: center;
 `;
 
 const MatrixLabel = styled.label`
-  color: #a0aec0;
+  color: ${props => props.theme.colors.textMuted};
   font-size: 0.65rem;
   text-transform: uppercase;
   margin-bottom: 4px;
@@ -42,28 +42,28 @@ const MatrixLabel = styled.label`
 `;
 
 const AmountDisplay = styled.div`
-  background: #1a202c;
-  border: 1px solid #4a5568;
+  background: ${props => props.theme.colors.background};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
   padding: 6px;
   font-size: 0.75rem;
-  color: #e2e8f0;
+  color: ${props => props.theme.colors.text};
   text-align: center;
   font-family: monospace;
 `;
 
 const MatrixSelect = styled.select`
-  background: #4a5568;
-  border: 1px solid #2d3748;
+  background: ${props => props.theme.colors.button};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
-  color: #e2e8f0;
+  color: ${props => props.theme.colors.text};
   padding: 6px;
   font-size: 0.75rem;
   width: 100%;
   
   &:focus {
     outline: none;
-    border-color: #63b3ed;
+    border-color: ${props => props.theme.colors.primary};
   }
 `;
 

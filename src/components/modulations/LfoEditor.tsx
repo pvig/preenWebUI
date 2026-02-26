@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import KnobBase from '../knobs/KnobBase';
 import LfoWaveformSelector from './LfoWaveformSelector';
-import { type LfoType, type MidiClockMode, MIDI_CLOCK_MODES, MIDI_CLOCK_LABELS } from '../../types/lfo';
+import { type MidiClockMode, MIDI_CLOCK_MODES, MIDI_CLOCK_LABELS } from '../../types/lfo';
 import { useLfo, updateLfo } from '../../stores/patchStore';
+import { useThemeStore } from '../../theme/themeStore';
 
 const LfoContainer = styled.div`
-  background: #2d3748;
+  background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  border: 1px solid ${props => props.theme.colors.border};
 `;
 
 const LfoTitle = styled.h3`
-  color: #e2e8f0;
+  color: ${props => props.theme.colors.text};
   font-size: 1rem;
   margin: 0 0 8px 0;
   text-transform: uppercase;
@@ -40,18 +42,18 @@ const LfoTabs = styled.div`
 `;
 
 const LfoTab = styled.button<{ $active: boolean }>`
-  background: ${props => props.$active ? '#4a5568' : '#1a202c'};
-  border: none;
+  background: ${props => props.$active ? props.theme.colors.buttonActive : props.theme.colors.background};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
-  color: ${props => props.$active ? '#63b3ed' : '#a0aec0'};
+  color: ${props => props.$active ? props.theme.colors.background : props.theme.colors.textMuted};
   padding: 6px 12px;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
   
   &:hover {
-    background: #4a5568;
-    color: #63b3ed;
+    background: ${props => props.theme.colors.buttonHover};
+    color: ${props => props.theme.colors.primary};
   }
 `;
 
@@ -70,23 +72,23 @@ const ControlGroup = styled.div`
 `;
 
 const ControlLabel = styled.label`
-  color: #a0aec0;
+  color: ${props => props.theme.colors.textMuted};
   font-size: 0.75rem;
   text-transform: uppercase;
 `;
 
 const Select = styled.select`
-  background: #4a5568;
-  border: 1px solid #2d3748;
+  background: ${props => props.theme.colors.button};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
-  color: #e2e8f0;
-  padding: 8px;
-  font-size: 0.875rem;
-  width: 100%;
+  color: ${props => props.theme.colors.text};
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  min-width: 80px;
   
   &:focus {
     outline: none;
-    border-color: #63b3ed;
+    border-color: ${props => props.theme.colors.primary};
   }
 `;
 
@@ -97,6 +99,7 @@ const Select = styled.select`
 export const LfoEditor: React.FC = () => {
   const [activeLfo, setActiveLfo] = useState<0 | 1 | 2>(0);
   const lfo = useLfo(activeLfo);
+  const { theme } = useThemeStore();
 
   return (
     <LfoContainer>
@@ -144,8 +147,8 @@ export const LfoEditor: React.FC = () => {
               value={lfo.frequency}
               onChange={(frequency) => updateLfo(activeLfo, { frequency })}
               color="#9F7AEA"
-              backgroundColor="#2d3748"
-              strokeColor="#4a5568"
+              backgroundColor={theme.colors.knobBackground}
+              strokeColor={theme.colors.knobStroke}
               renderLabel={(v) => v.toFixed(1) + ' Hz'}
               label="Frequency"
             />
@@ -175,8 +178,8 @@ export const LfoEditor: React.FC = () => {
             value={lfo.phase}
             onChange={(phase) => updateLfo(activeLfo, { phase })}
             color="#48BB78"
-            backgroundColor="#2d3748"
-            strokeColor="#4a5568"
+            backgroundColor={theme.colors.knobBackground}
+            strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => Math.round(v) + '°'}
             label="Phase"
           />
@@ -191,8 +194,8 @@ export const LfoEditor: React.FC = () => {
             value={lfo.bias}
             onChange={(bias) => updateLfo(activeLfo, { bias })}
             color="#F6AD55"
-            backgroundColor="#2d3748"
-            strokeColor="#4a5568"
+            backgroundColor={theme.colors.knobBackground}
+            strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => v.toFixed(2)}
             label="Bias"
           />
@@ -210,8 +213,8 @@ export const LfoEditor: React.FC = () => {
               updateLfo(activeLfo, { keysync });
             }}
             color="#63B3ED"
-            backgroundColor="#2d3748"
-            strokeColor="#4a5568"
+            backgroundColor={theme.colors.knobBackground}
+            strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => v < 0 ? 'Off' : v.toFixed(1)}
             label="KeySync"
           />
