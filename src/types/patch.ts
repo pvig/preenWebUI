@@ -269,6 +269,37 @@ export const DEFAULT_LFO: LFO = {
   keysync: 'Off'
 };
 
+export const DEFAULT_FILTER: Filter = {
+  type: 'OFF',
+  param1: 128,
+  param2: 0,
+  gain: 128
+};
+
+export const DEFAULT_ARPEGGIATOR: ArpeggiatorSettings = {
+  clock: 120,
+  direction: 'Up',
+  octave: 1,
+  pattern: 'Pattern1',
+  division: '1/16',
+  duration: '50%',
+  latch: 'Off'
+};
+
+export const DEFAULT_NOTE_CURVE: NoteCurve = {
+  before: 'Flat',
+  breakNote: 60,
+  after: 'Flat'
+};
+
+export const DEFAULT_MIDI_SETTINGS: MIDISettings = {
+  channel: 1,
+  velocityCurve: 'LINEAR',
+  pitchBendRange: 2,
+  modulationWheelTarget: 'None',
+  sustainPedalBehavior: 'STANDARD'
+};
+
 // Ré-exporter les constantes de modulation
 export { DEFAULT_LFO_ENVELOPE, DEFAULT_STEP_SEQUENCER } from './modulation';
 

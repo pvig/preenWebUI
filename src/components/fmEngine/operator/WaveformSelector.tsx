@@ -1,30 +1,54 @@
-import { Select, MenuItem } from '@mui/material';
-import { WaveformType } from '../../../types/waveform';
+import styled from 'styled-components';
+import { WaveformType, WAVEFORMS } from '../../../types/waveform';
+import { waveformToDisplayName } from '../../../utils/waveformUtils';
 
-const WAVEFORMS = [
-  { value: 'SINE', label: 'Sinus' },
-  { value: 'SQUARE', label: 'Carré' },
-  { value: 'TRIANGLE', label: 'Triangle' },
-  { value: 'SAW', label: 'Dent de scie' }
-];
+const ControlContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const ControlLabel = styled.label`
+  color: ${props => props.theme.colors.textMuted};
+  font-size: 0.75rem;
+  text-transform: uppercase;
+`;
+
+const StyledSelect = styled.select`
+  background: ${props => props.theme.colors.button};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
+  color: ${props => props.theme.colors.text};
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  min-width: 120px;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+  
+  &:hover {
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
 
 export const WaveformSelector = ({ value, onChange }: { value?: WaveformType; onChange: (v: WaveformType) => void }) => {
   return (
-    <div className="operator-control">
-      <label>Forme d'onde</label>
-      <Select
+    <ControlContainer>
+      <ControlLabel>Forme d'onde</ControlLabel>
+      <StyledSelect
         value={value || 'SINE'}
         onChange={(e) => onChange(e.target.value as WaveformType)}
-        size="small"
-        variant="standard"
       >
         {WAVEFORMS.map(wave => (
-          <MenuItem key={wave.value} value={wave.value}>
-            {wave.label}
-          </MenuItem>
+          <option key={wave.name} value={wave.name}>
+            {waveformToDisplayName(wave.name)}
+          </option>
         ))}
-      </Select>
-    </div>
+      </StyledSelect>
+    </ControlContainer>
   );
 }
 

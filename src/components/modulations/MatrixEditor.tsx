@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useCurrentPatch, usePatchStore } from '../../stores/patchStore';
+import KnobBase from '../knobs/KnobBase';
+import { sendModulationMatrixParam } from '../../midi/midiService';
 
 const MatrixContainer = styled.div`
   background: ${props => props.theme.colors.panel};
@@ -25,7 +27,7 @@ const MatrixGrid = styled.div`
 
 const MatrixRow = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 80px;
+  grid-template-columns: 1fr 120px 1fr 1fr;
   gap: 10px;
   padding: 8px;
   background: ${props => props.theme.colors.background};
@@ -41,15 +43,19 @@ const MatrixLabel = styled.label`
   display: block;
 `;
 
-const AmountDisplay = styled.div`
-  background: ${props => props.theme.colors.background};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  padding: 6px;
-  font-size: 0.75rem;
-  color: ${props => props.theme.colors.text};
-  text-align: center;
-  font-family: monospace;
+const AmountLabel = styled.label`
+  color: ${props => props.theme.colors.textMuted};
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: block;
+  margin-left: 64px;
+`;
+
+const KnobContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const MatrixSelect = styled.select`
@@ -97,14 +103,22 @@ export const MatrixEditor: React.FC = () => {
 
   const handleSourceChange = (rowIndex: number, source: string) => {
     updateModulationMatrixRow(rowIndex, { source });
+    sendModulationMatrixParam(rowIndex, 'source', source);
   };
 
   const handleDestination1Change = (rowIndex: number, destination1: string) => {
     updateModulationMatrixRow(rowIndex, { destination1 });
+    sendModulationMatrixParam(rowIndex, 'destination1', destination1);
   };
 
   const handleDestination2Change = (rowIndex: number, destination2: string) => {
     updateModulationMatrixRow(rowIndex, { destination2 });
+    sendModulationMatrixParam(rowIndex, 'destination2', destination2);
+  };
+
+  const handleAmountChange = (rowIndex: number, amount: number) => {
+    updateModulationMatrixRow(rowIndex, { amount });
+    sendModulationMatrixParam(rowIndex, 'amount', amount);
   };
 
   return (
@@ -125,6 +139,27 @@ export const MatrixEditor: React.FC = () => {
                   </option>
                 ))}
               </MatrixSelect>
+            </div>
+            
+            <div>
+              <AmountLabel>Amount</AmountLabel>
+              <KnobContainer>
+                <KnobBase
+                  size={50}
+                  knobRadius={18}
+                  min={-1}
+                  max={1}
+                  value={row.amount}
+                  onChange={(value) => handleAmountChange(index, value)}
+                  step={0.01}
+                  color="#4A9EFF"
+                  backgroundColor="#2A2A2A"
+                  strokeColor="#444"
+                  renderLabel={(val) => val.toFixed(2)}
+                  label={null}
+                  valuePosition="left"
+                />
+              </KnobContainer>
             </div>
             
             <div>
@@ -153,13 +188,6 @@ export const MatrixEditor: React.FC = () => {
                   </option>
                 ))}
               </MatrixSelect>
-            </div>
-            
-            <div>
-              <MatrixLabel>Amount</MatrixLabel>
-              <AmountDisplay>
-                {row.amount.toFixed(2)}
-              </AmountDisplay>
             </div>
           </MatrixRow>
         ))}

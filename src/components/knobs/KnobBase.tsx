@@ -1,5 +1,8 @@
 import React, { useRef } from "react";
 
+type ValuePosition = 'bottom' | 'left' | 'none';
+type LabelPosition = 'top' | 'left' | 'none';
+
 interface KnobBaseProps {
   size?: number;
   knobRadius?: number;
@@ -14,6 +17,8 @@ interface KnobBaseProps {
   renderLabel?: (value: number) => React.ReactNode;
   label?: string | null;
   title?: string; // Tooltip HTML natif
+  valuePosition?: ValuePosition; // Position d'affichage de la valeur
+  labelPosition?: LabelPosition; // Position d'affichage du label
 }
 
 function KnobBase({
@@ -29,7 +34,9 @@ function KnobBase({
   strokeColor = "#ccc",
   renderLabel = (val: number) => val,
   label = null,
-  title
+  title,
+  valuePosition = 'bottom',
+  labelPosition = 'top'
 }: KnobBaseProps) {
   const center = size / 2;
   const radius = knobRadius ?? (center - 10);
@@ -140,81 +147,125 @@ function KnobBase({
       title={title}
       style={{
         position: "relative",
-        width: size,
-        height: size,
+        display: (valuePosition === 'left' || labelPosition === 'left') ? 'flex' : 'block',
+        alignItems: (valuePosition === 'left' || labelPosition === 'left') ? 'center' : 'initial',
+        gap: (valuePosition === 'left' || labelPosition === 'left') ? '8px' : 0,
       }}
     >
-      {/* SVG du knob */}
-      <svg
-        ref={svgRef}
-        width={size}
-        height={size}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        style={{ userSelect: "none", cursor: "pointer", touchAction: "none" }}
-      >
-        <circle
-          cx={center}
-          cy={center}
-          r={radius * 1.2}
-          fill="transparent"
-        />
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill={backgroundColor}
-          stroke={strokeColor}
-          strokeWidth="2"
-        />
-        <line {...tickMin} stroke="#888" strokeWidth="2" />
-        <line {...tickMax} stroke="#888" strokeWidth="2" />
-        <line
-          x1={center}
-          y1={center}
-          x2={pointerX}
-          y2={pointerY}
-          stroke={color}
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-      </svg>
-
-      {/* Label au-dessus */}
-      {label && (
+      {/* Label à gauche */}
+      {labelPosition === 'left' && label && (
         <div
           style={{
-            position: "absolute",
-            top: -12,
-            left: 0,
-            width: "100%",
-            textAlign: "center",
-            fontSize: 12,
+            fontSize: 11,
+            color: "#888",
             fontWeight: "bold",
+            minWidth: '55px',
+            textAlign: 'right',
             pointerEvents: "none",
-            color: "#888"
+            textTransform: 'uppercase',
           }}
         >
           {label}
         </div>
       )}
 
-      {/* Valeur en dessous */}
+      {/* Valeur à gauche */}
+      {valuePosition === 'left' && (
+        <div
+          style={{
+            fontSize: 12,
+            color: color,
+            fontFamily: 'monospace',
+            minWidth: '45px',
+            textAlign: 'right',
+            pointerEvents: "none",
+          }}
+        >
+          {renderLabel(value)}
+        </div>
+      )}
+
       <div
         style={{
-          position: "absolute",
-          bottom: -8,
-          left: 0,
-          width: "100%",
-          textAlign: "center",
-          fontSize: 12,
-          color: color,
-          pointerEvents: "none",
+          position: "relative",
+          width: size,
+          height: size,
         }}
       >
-        {renderLabel(value)}
+        {/* SVG du knob */}
+        <svg
+          ref={svgRef}
+          width={size}
+          height={size}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          style={{ userSelect: "none", cursor: "pointer", touchAction: "none" }}
+        >
+          <circle
+            cx={center}
+            cy={center}
+            r={radius * 1.2}
+            fill="transparent"
+          />
+          <circle
+            cx={center}
+            cy={center}
+            r={radius}
+            fill={backgroundColor}
+            stroke={strokeColor}
+            strokeWidth="2"
+          />
+          <line {...tickMin} stroke="#888" strokeWidth="2" />
+          <line {...tickMax} stroke="#888" strokeWidth="2" />
+          <line
+            x1={center}
+            y1={center}
+            x2={pointerX}
+            y2={pointerY}
+            stroke={color}
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+        </svg>
+
+        {/* Label au-dessus */}
+        {labelPosition === 'top' && label && (
+          <div
+            style={{
+              position: "absolute",
+              top: -12,
+              left: 0,
+              width: "100%",
+              textAlign: "center",
+              fontSize: 12,
+              fontWeight: "bold",
+              pointerEvents: "none",
+              color: "#888"
+            }}
+          >
+            {label}
+          </div>
+        )}
+
+        {/* Valeur en dessous */}
+        {valuePosition === 'bottom' && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: -8,
+              left: 0,
+              width: "100%",
+              textAlign: "center",
+              fontSize: 12,
+              color: color,
+              pointerEvents: "none",
+            }}
+          >
+            {renderLabel(value)}
+          </div>
+        )}
       </div>
     </div>
 

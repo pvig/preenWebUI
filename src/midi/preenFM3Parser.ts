@@ -138,15 +138,26 @@ export class PreenFM3Parser {
     const name = this.getPresetName() || 'MIDI Patch';
     
     // Créer les opérateurs depuis l'algorithme avec les valeurs NRPN
-    const operators = algorithm.ops.map((op, i) => {
+    const operators = algorithm.ops.map((op) => {
+      // Utiliser op.id pour l'indexation NRPN (1-6), pas l'index du tableau
+      const opIndex = op.id - 1; // 0-5 pour les calculs d'offset
+      
       // Base index pour ROW_OSCx (ROW_OSC1=44, ROW_OSC2=48, etc.)
       // Chaque ROW_OSC a 4 encoders: shape, frequencyType, frequencyMul, detune
-      const oscRowBase = 44 + i * 4;
+      const oscRowBase = 44 + opIndex * 4;
       
-      // Waveform (encoder 0: shape)
+      // Waveform (encoder 0: shape) - correspond aux 14 types du firmware
       const waveformValue = this.getValue(0, oscRowBase) ?? 0;
-      const waveforms: WaveformType[] = ['SINE', 'SAW', 'SQUARE', 'TRIANGLE', 'NOISE', 'USER1'];
-      const waveform = waveforms[Math.min(waveformValue, 5)] || 'SINE';
+      const waveforms: WaveformType[] = [
+        'SINE', 'SAW', 'SQUARE', 'SIN_SQUARED', 'SIN_ZERO', 'SIN_POS', 
+        'RAND', 'OFF', 'USER1', 'USER2', 'USER3', 'USER4', 'USER5', 'USER6'
+      ];
+      const waveform = waveforms[Math.min(waveformValue, 13)] || 'SINE';
+      
+      // Keyboard Tracking (encoder 1: frequencyType)
+      // 0-200 in firmware (0 = -1.0, 100 = 0.0, 200 = +1.0)
+      const kbdTrackValue = this.getValue(0, oscRowBase + 1) ?? 100;
+      const keyboardTracking = (kbdTrackValue - 100) / 100;
       
       // Fréquence (encoder 2: frequencyMul)
       const freqValue = this.getValue(0, oscRowBase + 2) ?? 1600;
@@ -159,7 +170,7 @@ export class PreenFM3Parser {
       // ADSR: Les données sont interleaved (Time/Level alternés)
       // ROW_ENV1: indices 68-75 (Attack T/L, Decay T/L, Sustain T/L, Release T/L)
       // ROW_ENV2: indices 76-83, etc.
-      const envRowBase = 68 + i * 8; // 8 valeurs par envelope (4 temps + 4 niveaux entrelacés)
+      const envRowBase = 68 + opIndex * 8; // 8 valeurs par envelope (4 temps + 4 niveaux entrelacés)
       
       // Les temps sont RELATIFS et en centièmes, les niveaux sont déjà en pourcentage (0-100)
       // Il faut les cumuler pour obtenir les positions absolues pour l'UI
@@ -181,11 +192,47 @@ export class PreenFM3Parser {
       // Note: Les courbes ADSR (ROW_ENV1_CURVE) ne sont pas transmises via NRPN par le firmware
       // On utilise donc les valeurs par défaut de l'algorithme
       
+      // MIX (amplitude): Lecture depuis NRPN
+      // OP1-4: Théoriquement contrôlés par CC 27-30, mais peuvent être dans NRPN [0, 32-35] pour le dump
+      // OP5-6: NRPN [0, 36-37] (non documenté officiellement)
+      let mixLsb: number;
+      if (opIndex < 4) {
+        mixLsb = 32 + opIndex; // Mix1-4: LSB 32-35
+      } else {
+        mixLsb = 32 + opIndex; // Mix5-6: LSB 36-37 (continues the sequence)
+      }
+      
+      const mixValue = this.getValue(0, mixLsb) ?? 100;
+      const amplitude = Math.round(mixValue * 127 / 100);
+      
+      console.log(`📊 Parsing operator ${op.id} (index ${opIndex}):`, {
+        mixLsb,
+        mixValue,
+        amplitude,
+        note: opIndex < 4 ? 'Also controllable via CC ' + (27 + opIndex) : 'NRPN only (undocumented)'
+      });
+      
+      // PAN: Lecture depuis NRPN
+      // OP1-4: Théoriquement contrôlés par CC 31-34, mais peuvent être dans NRPN [0, 36-39] pour le dump
+      // OP5-6: NRPN [0, 40-41] (non documenté officiellement) 
+      let panLsb: number;
+      if (opIndex < 4) {
+        panLsb = 36 + opIndex; // Pan1-4: LSB 36-39
+      } else {
+        panLsb = 36 + opIndex; // Pan5-6: LSB 40-41 (continues the sequence)
+      }
+      
+      const panValue = this.getValue(0, panLsb) ?? 100;
+      const pan = panValue - 100;
+      
       return {
         ...op,
         waveform,
+        keyboardTracking,
         frequency,
         detune,
+        amplitude,
+        pan,
         // Créer une copie profonde des targets pour éviter les erreurs de lecture seule
         target: op.target.map(t => ({ ...t })),
         adsr: {

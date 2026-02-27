@@ -21,31 +21,26 @@ export const MIDI_CC = {
   CURRENT_INSTRUMENT: 119,
 } as const;
 
-// PreenFM3 Control Changes (estimated from MidiDecoder.cpp)
-// Note: Exact CC numbers need to be confirmed from firmware headers
+// PreenFM3 Control Changes (corrected through extensive empirical testing)
+// Note: Mix and Pan are INTERLEAVED (not sequential)
 export const PREENFM3_CC = {
   // Engine
   ALGO: 20,  // Algorithm selection (0-31 for 32 algorithms)
   
   // Modulation Indices
   IM1: 21,
-  IM2: 22,
-  IM3: 23,
-  IM4: 24,
-  IM5: 25,
-  IM_FEEDBACK: 26,
+  // Note: IM2-IM6 mapping is uncertain and may overlap with Mix/Pan
   
-  // Oscillator Mix
-  MIX1: 27,
-  MIX2: 28,
-  MIX3: 29,
-  MIX4: 30,
-  
-  // Oscillator Pan
-  PAN1: 31,
-  PAN2: 32,
-  PAN3: 33,
-  PAN4: 34,
+  // Oscillator Mix and Pan (INTERLEAVED pattern!)
+  // Mix uses EVEN CCs, Pan uses ODD CCs
+  MIX1: 22,  // Mix Operator 1
+  PAN1: 23,  // Pan Operator 1
+  MIX2: 24,  // Mix Operator 2
+  PAN2: 25,  // Pan Operator 2
+  MIX3: 26,  // Mix Operator 3
+  PAN3: 27,  // Pan Operator 3
+  MIX4: 28,  // Mix Operator 4
+  PAN4: 29,  // Pan Operator 4,
   
   // Oscillator Frequency
   OSC1_FREQ: 35,

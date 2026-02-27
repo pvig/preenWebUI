@@ -71,11 +71,15 @@ const ModulationItem = styled.div`
   padding: 4px 8px;
   background: ${props => props.theme.colors.background};
   border-radius: 4px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 `;
 
 const Label = styled.label`
-  flex: 1;
-  min-width: 140px;
+  flex: 1 1 auto;
+  min-width: 100px;
+  max-width: 50%;
   color: ${props => props.theme.colors.textSecondary};
   font-size: 0.7rem;
   line-height: 1;
@@ -87,39 +91,17 @@ const Label = styled.label`
 
 const KnobsContainer = styled.div`
   display: flex;
-  gap: 12px;
+  gap: 0px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  flex: 0 0 auto;
+  flex-shrink: 0;
 `;
 
-const KnobWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-  
-  /* Repositionner la valeur du knob à gauche */
-  > div {
-    position: relative;
-    
-    /* Cibler le div de valeur interne du KnobBase et le déplacer à gauche */
-    > div:last-child {
-      bottom: 20px !important;
-      left: -36px !important;
-      width: auto;
-      text-align: right;
-      color: #63b3ed;
-      font-weight: bold;
-      font-size: 11px;
-    }
-  }
-`;
-
-const KnobLabel = styled.span`
-  color: #a0aec0;
-  font-size: 0.6rem;
-  font-weight: 500;
-  text-transform: uppercase;
+const EmptyMessage = styled.p`
+  color: ${props => props.theme.colors.textMuted};
+  font-size: 0.85rem;
+  margin: 0;
 `;
 
 interface ModulationIndexesEditorProps {
@@ -157,7 +139,7 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
         )}
         <ModulationList>
           <ModulationListTitle>Index de Modulation</ModulationListTitle>
-          <p style={{ color: '#718096', fontSize: '0.85rem', margin: 0 }}>Pas de patch</p>
+          <EmptyMessage>Pas de patch</EmptyMessage>
         </ModulationList>
       </EditorContainer>
     );
@@ -213,7 +195,7 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
         )}
         <ModulationList>
           <ModulationListTitle>Index de Modulation</ModulationListTitle>
-          <p style={{ color: '#718096', fontSize: '0.85rem', margin: 0 }}>Aucune liaison</p>
+          <EmptyMessage>Aucune liaison</EmptyMessage>
         </ModulationList>
       </EditorContainer>
     );
@@ -248,38 +230,34 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
           >
             <Label>{label}</Label>
             <KnobsContainer>
-              <KnobWrapper>
-                <KnobLabel>IM</KnobLabel>
-                <KnobBase
-                  size={50}
-                  knobRadius={12}
-                  min={0}
-                  max={100}
-                  value={link.im}
-                  onChange={(val) => handleIMChange(link.sourceId, link.targetId, Math.round(val))}
-                  color="#0ea5e9"
-                  backgroundColor="#1a202c"
-                  strokeColor={theme.colors.knobStroke}
-                  renderLabel={(val) => Math.round(val)}
-                  label={null}
-                />
-              </KnobWrapper>
-              <KnobWrapper>
-                <KnobLabel>Velo</KnobLabel>
-                <KnobBase
-                  size={50}
-                  knobRadius={12}
-                  min={0}
-                  max={100}
-                  value={link.modulationIndexVelo}
-                  onChange={(val) => handleVeloChange(link.sourceId, link.targetId, Math.round(val))}
-                  color="#7c3aed"
-                  backgroundColor="#1a202c"
-                  strokeColor={theme.colors.knobStroke}
-                  renderLabel={(val) => Math.round(val)}
-                  label={null}
-                />
-              </KnobWrapper>
+              <KnobBase
+                size={50}
+                knobRadius={12}
+                min={0}
+                max={100}
+                value={link.im}
+                onChange={(val) => handleIMChange(link.sourceId, link.targetId, Math.round(val))}
+                color="#0ea5e9"
+                backgroundColor="#1a202c"
+                strokeColor={theme.colors.knobStroke}
+                renderLabel={(val) => Math.round(val)}
+                label="IM"
+                labelPosition="left"
+              />
+              <KnobBase
+                size={50}
+                knobRadius={12}
+                min={0}
+                max={100}
+                value={link.modulationIndexVelo}
+                onChange={(val) => handleVeloChange(link.sourceId, link.targetId, Math.round(val))}
+                color="#7c3aed"
+                backgroundColor="#1a202c"
+                strokeColor={theme.colors.knobStroke}
+                renderLabel={(val) => Math.round(val)}
+                label="Velo"
+                labelPosition="left"
+              />
             </KnobsContainer>
           </ModulationItem>
         );

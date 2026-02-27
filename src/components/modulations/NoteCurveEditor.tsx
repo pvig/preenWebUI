@@ -133,6 +133,7 @@ export const NoteCurveEditor: React.FC<NoteCurveEditorProps> = ({ curveIndex }) 
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => noteToName(Math.round(v))}
             label="Break"
+            labelPosition="left"
           />
         </ControlGroup>
 

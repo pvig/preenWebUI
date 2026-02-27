@@ -7,8 +7,11 @@ export function waveformToDisplayName(w: WaveformType): string {
         case 'SINE': return 'Sinus';
         case 'SAW': return 'Dent de scie';
         case 'SQUARE': return 'Carré';
-        case 'TRIANGLE': return 'Triangle';
-        case 'NOISE': return 'Bruit';
+        case 'SIN_SQUARED': return 'Sin²';
+        case 'SIN_ZERO': return 'Sin Zero';
+        case 'SIN_POS': return 'Sin+';
+        case 'RAND': return 'Aléatoire';
+        case 'OFF': return 'Off';
         default:
             // USER1..USER6 → "User 1"…
             return w.replace('USER', 'User ');
@@ -53,18 +56,50 @@ export function generateWaveformPath(
             return `M 0 ${midY + amp} L ${width * 0.98} ${midY - amp}`;
         }
 
-        case 'TRIANGLE': {
-            return [
-                `M 0 ${midY}`,
-                `L ${width * 0.25} ${midY - amp}`,
-                `L ${width * 0.5} ${midY + amp}`,
-                `L ${width * 0.75} ${midY - amp}`,
-                `L ${width * 0.98} ${midY + amp}`,
-            ].join(' ');
+        case 'SIN_SQUARED': {
+            // s^2: sinus au carré (toujours positif ou négatif)
+            const n = 32;
+            let d = '';
+            for (let i = 0; i <= n; i++) {
+                const t = i / n;
+                const x = t * width;
+                const sinVal = Math.sin(2 * Math.PI * t);
+                const y = midY - amp * Math.sign(sinVal) * (sinVal * sinVal);
+                d += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+            }
+            return d;
         }
 
-        case 'NOISE': {
-            // bruit « pseudo » déterministe
+        case 'SIN_ZERO': {
+            // szer: sinus avec portions à zéro
+            const n = 32;
+            let d = '';
+            for (let i = 0; i <= n; i++) {
+                const t = i / n;
+                const x = t * width;
+                const sinVal = Math.sin(2 * Math.PI * t);
+                const y = (Math.abs(sinVal) > 0.5) ? midY - amp * sinVal : midY;
+                d += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+            }
+            return d;
+        }
+
+        case 'SIN_POS': {
+            // spos: sinus redressé (seulement positif)
+            const n = 32;
+            let d = '';
+            for (let i = 0; i <= n; i++) {
+                const t = i / n;
+                const x = t * width;
+                const sinVal = Math.abs(Math.sin(2 * Math.PI * t));
+                const y = midY - amp * sinVal;
+                d += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+            }
+            return d;
+        }
+
+        case 'RAND': {
+            // rand: bruit aléatoire
             const n = 40;
             let seed = 1337;
             const rnd = () => {
@@ -82,6 +117,11 @@ export function generateWaveformPath(
                 d += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
             }
             return d;
+        }
+
+        case 'OFF': {
+            // off: ligne plate au milieu (silence)
+            return `M 0 ${midY} L ${width} ${midY}`;
         }
 
         // USER1..USER6 : on réutilise un sinus simple

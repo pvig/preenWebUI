@@ -2,8 +2,8 @@
 
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { WaveformType } from '../types/waveform';
-import { sendOperatorMix, sendOperatorPan } from '../midi/midiService';
+import { WaveformType, getWaveformId } from '../types/waveform';
+import { sendOperatorMix, sendOperatorPan, sendOperatorFrequency, sendOperatorDetune, sendOperatorWaveform, sendOperatorKeyboardTracking } from '../midi/midiService';
 
 import {
   Patch,
@@ -17,7 +17,11 @@ import {
   DEFAULT_STEP_SEQUENCER,
   DEFAULT_ALGORITHMS,
   Algorithm,
-  ModulationMatrixRow
+  ModulationMatrixRow,
+  DEFAULT_FILTER,
+  DEFAULT_ARPEGGIATOR,
+  DEFAULT_NOTE_CURVE,
+  DEFAULT_MIDI_SETTINGS
 } from '../types/patch';
 import {
   AdsrState,
@@ -570,6 +574,61 @@ export const usePatchStore = create<PatchStore>()(
           ];
         }
         
+        // Assurer la compatibilité : initialiser filters, arpeggiator, noteCurves, midi si non présents
+        if (!newPatch.filters) {
+          newPatch.filters = [
+            { ...DEFAULT_FILTER },
+            { ...DEFAULT_FILTER }
+          ];
+        }
+        
+        if (!newPatch.arpeggiator) {
+          newPatch.arpeggiator = { ...DEFAULT_ARPEGGIATOR };
+        }
+        
+        if (!newPatch.noteCurves) {
+          newPatch.noteCurves = [
+            { ...DEFAULT_NOTE_CURVE },
+            { ...DEFAULT_NOTE_CURVE }
+          ];
+        }
+        
+        if (!newPatch.midi) {
+          newPatch.midi = { ...DEFAULT_MIDI_SETTINGS };
+        }
+        
+        // Assurer la compatibilité : initialiser la matrice de modulation si non présente
+        if (!newPatch.modulationMatrix || newPatch.modulationMatrix.length === 0) {
+          newPatch.modulationMatrix = Array(12).fill(null).map(() => ({
+            source: 'None',
+            destination1: 'None',
+            destination2: 'None',
+            amount: 0
+          }));
+        }
+        
+        // Assurer la compatibilité : initialiser global si non présent
+        if (!newPatch.global) {
+          newPatch.global = {
+            volume: 0.8,
+            transpose: 0,
+            fineTune: 0,
+            polyphony: 8,
+            glideTime: 0,
+            bendRange: 2,
+            velocitySensitivity: 8
+          };
+        }
+        
+        // Assurer la compatibilité : initialiser effects si non présent
+        if (!newPatch.effects) {
+          newPatch.effects = {
+            reverb: { enabled: false, room: 0.5, damp: 0.5, level: 0.3 },
+            delay: { enabled: false, time: 0.25, feedback: 0.4, level: 0.2 },
+            chorus: { enabled: false, rate: 0.5, depth: 0.3, level: 0.2 }
+          };
+        }
+        
         // Réappliquer les valeurs MIX/PAN préservées
         newPatch.operators = newPatch.operators.map(op => {
           const preserved = preservedMixPan.get(op.id);
@@ -670,16 +729,76 @@ export const useOperator = (operatorId: number) => usePatchStore(state => {
 export const updateOperator = (operatorId: number, changes: Partial<Operator>, sendMidi: boolean = true) => {
   console.log('🔧 updateOperator called:', { operatorId, changes, sendMidi });
   
+  // Get current algorithm to determine carrier index
+  const currentPatch = usePatchStore.getState().currentPatch;
+  const currentAlgorithm = currentPatch.algorithm;
+  
+  // PreenFM3's Mix/Pan encoders map to CARRIER INDEX, not operator ID
+  // In algo DX22: carriers are OP1,OP3,OP4,OP5 → indices 0,1,2,3
+  // CC22 controls 1st carrier (index 0), CC24 controls 2nd carrier (index 1), etc.
+  const carriers = currentAlgorithm.ops.filter(op => op.type === 'CARRIER');
+  const carrierIndex = carriers.findIndex(carrier => carrier.id === operatorId);
+  const isCarrier = carrierIndex !== -1;
+  
   // Envoyer le MIDI si l'amplitude change (sauf si on reçoit depuis MIDI)
   if (sendMidi && changes.amplitude !== undefined) {
     console.log('🎛️ Amplitude change detected, calling sendOperatorMix...');
-    sendOperatorMix(operatorId, changes.amplitude);
+    console.log('🔍 Carrier analysis:', { 
+      operatorId, 
+      isCarrier, 
+      carrierIndex, 
+      totalCarriers: carriers.length,
+      carrierIds: carriers.map(c => c.id)
+    });
+    
+    // For carriers: use carrier index (0-3) to determine CC
+    // CC pattern: 22, 24, 26, 28 = 22 + carrierIndex*2
+    if (isCarrier && carrierIndex < 4) {
+      const encoderNumber = carrierIndex + 1; // 1-based for display
+      console.log(`📍 Carrier ${operatorId} is the ${encoderNumber}${encoderNumber===1?'st':encoderNumber===2?'nd':encoderNumber===3?'rd':'th'} carrier → Encoder Mix${encoderNumber}`);
+      sendOperatorMix(encoderNumber, changes.amplitude);
+    } else if (!isCarrier) {
+      console.warn('⚠️ Modulator has no Mix control');
+    }
   }
   
   // Envoyer le MIDI si le pan change (sauf si on reçoit depuis MIDI)
   if (sendMidi && changes.pan !== undefined) {
     console.log('🎛️ Pan change detected, calling sendOperatorPan...');
-    sendOperatorPan(operatorId, changes.pan);
+    
+    // Same logic for Pan: use carrier index
+    if (isCarrier && carrierIndex < 4) {
+      const encoderNumber = carrierIndex + 1;
+      console.log(`📍 Carrier ${operatorId} is the ${encoderNumber}${encoderNumber===1?'st':encoderNumber===2?'nd':encoderNumber===3?'rd':'th'} carrier → Encoder Pan${encoderNumber}`);
+      sendOperatorPan(encoderNumber, changes.pan);
+    } else if (!isCarrier) {
+      console.warn('⚠️ Modulator has no Pan control');
+    }
+  }
+  
+  // Envoyer le MIDI si la fréquence change (sauf si on reçoit depuis MIDI)
+  if (sendMidi && changes.frequency !== undefined) {
+    console.log('🎛️ Frequency change detected, calling sendOperatorFrequency...');
+    sendOperatorFrequency(operatorId, changes.frequency);
+  }
+  
+  // Envoyer le MIDI si le detune change (sauf si on reçoit depuis MIDI)
+  if (sendMidi && changes.detune !== undefined) {
+    console.log('🎛️ Detune change detected, calling sendOperatorDetune...');
+    sendOperatorDetune(operatorId, changes.detune);
+  }
+  
+  // Envoyer le MIDI si la waveform change (sauf si on reçoit depuis MIDI)
+  if (sendMidi && changes.waveform !== undefined) {
+    console.log('🎛️ Waveform change detected, calling sendOperatorWaveform...');
+    const waveformId = getWaveformId(changes.waveform);
+    sendOperatorWaveform(operatorId, waveformId);
+  }
+  
+  // Envoyer le MIDI si le keyboard tracking change (sauf si on reçoit depuis MIDI)
+  if (sendMidi && changes.keyboardTracking !== undefined) {
+    console.log('🎛️ Keyboard tracking change detected, calling sendOperatorKeyboardTracking...');
+    sendOperatorKeyboardTracking(operatorId, changes.keyboardTracking);
   }
   
   // Mettre à jour le store
@@ -740,19 +859,19 @@ export const updateGlobal = (changes: Partial<Patch['global']>) =>
   usePatchStore.getState().updateGlobal(changes);
 
 export const useFilter = (filterIndex: 0 | 1) => usePatchStore(state => {
-  return state.currentPatch.filters[filterIndex];
+  return state.currentPatch.filters?.[filterIndex] ?? DEFAULT_FILTER;
 });
 export const updateFilter = (filterIndex: 0 | 1, changes: Partial<import('../types/patch').Filter>) =>
   usePatchStore.getState().updateFilter(filterIndex, changes);
 
 export const useArpeggiator = () => usePatchStore(state => {
-  return state.currentPatch.arpeggiator;
+  return state.currentPatch.arpeggiator ?? DEFAULT_ARPEGGIATOR;
 });
 export const updateArpeggiator = (changes: Partial<import('../types/patch').ArpeggiatorSettings>) =>
   usePatchStore.getState().updateArpeggiator(changes);
 
 export const useNoteCurve = (curveIndex: 0 | 1) => usePatchStore(state => {
-  return state.currentPatch.noteCurves[curveIndex];
+  return state.currentPatch.noteCurves?.[curveIndex] ?? DEFAULT_NOTE_CURVE;
 });
 export const updateNoteCurve = (curveIndex: 0 | 1, changes: Partial<import('../types/patch').NoteCurve>) =>
   usePatchStore.getState().updateNoteCurve(curveIndex, changes);

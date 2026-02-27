@@ -224,6 +224,7 @@ export const LfoEnvEditor: React.FC = () => {
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Attack"
+                labelPosition="left"
               />
             </ControlGroup>
 
@@ -242,6 +243,7 @@ export const LfoEnvEditor: React.FC = () => {
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => Math.round(v)}
                 label="Atk Level"
+                labelPosition="left"
               />
             </ControlGroup>
 
@@ -260,6 +262,7 @@ export const LfoEnvEditor: React.FC = () => {
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Decay"
+                labelPosition="left"
               />
             </ControlGroup>
 
@@ -282,6 +285,7 @@ export const LfoEnvEditor: React.FC = () => {
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => Math.round(v)}
                 label="Dec Level"
+                labelPosition="left"
               />
             </ControlGroup>
 
@@ -300,6 +304,7 @@ export const LfoEnvEditor: React.FC = () => {
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Sustain"
+                labelPosition="left"
               />
             </ControlGroup>
 
@@ -320,6 +325,7 @@ export const LfoEnvEditor: React.FC = () => {
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Release"
+                labelPosition="left"
               />
             </ControlGroup>
           </>
@@ -339,6 +345,7 @@ export const LfoEnvEditor: React.FC = () => {
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Silence"
+                labelPosition="left"
               />
             </ControlGroup>
 
@@ -357,6 +364,7 @@ export const LfoEnvEditor: React.FC = () => {
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Attack"
+                labelPosition="left"
               />
             </ControlGroup>
 
@@ -375,6 +383,7 @@ export const LfoEnvEditor: React.FC = () => {
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
                 label="Release"
+                labelPosition="left"
               />
             </ControlGroup>
           </>

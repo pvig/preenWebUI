@@ -204,58 +204,177 @@ export function sendEnvelopeRelease(opNumber: number, value: number, channel: nu
 }
 
 /**
- * Send operator mix/volume (amplitude) for operators 1-6
- * Note: MIX is controlled via NRPN, not CC
- * NRPN [0, 16+opNumber-1] for MIX1-MIX6
+ * Send operator mix/volume (amplitude) for operators 1-4
+ * REAL MAPPING (tested empirically): Mix and Pan are INTERLEAVED
+ * Mix: CC 22, 24, 26, 28 (even numbers starting at 22)
+ * Pan: CC 23, 25, 27, 29 (odd numbers starting at 23)
+ * Formula: CC = 22 + (opNumber-1) * 2
  */
 export function sendOperatorMix(opNumber: number, value: number, channel: number = currentChannel) {
   console.log('🎹 sendOperatorMix called:', { opNumber, value, channel, hasOutput: !!midiOutput });
   
-  if (opNumber < 1 || opNumber > 6) {
-    console.warn('⚠️ Operator mix only available for operators 1-6, got:', opNumber);
+  if (opNumber < 1 || opNumber > 4) {
+    console.warn('⚠️ Mix CC only available for operators 1-4, got:', opNumber);
     return;
   }
   
-  // value is 0-127 in UI (amplitude)
-  // PreenfM3 MIX range: 0-100 (from official doc)
-  const scaledValue = Math.max(0, Math.min(100, Math.round(value * 100 / 127)));
+  // OP1-4: Interleaved mapping - Mix on even CCs: 22, 24, 26, 28
+  const ccNumber = 22 + (opNumber - 1) * 2; // CC22, CC24, CC26, CC28
+  const scaledValue = Math.max(0, Math.min(127, Math.round(value)));
   
-  const nrpn: NRPNMessage = {
-    paramMSB: 0,
-    paramLSB: 16 + (opNumber - 1) * 2, // MIX1=16, MIX2=18, MIX3=20, etc. (interleaved with PAN)
-    valueMSB: 0,
-    valueLSB: scaledValue // Value 0-100 in LSB
-  };
+  console.log('📤 Sending MIX via CC:', {
+    opNumber,
+    ccNumber,
+    expectedParam: `Mix${opNumber}`,
+    scaledValue,
+    hex: `0x${(0xB0 + channel - 1).toString(16)} 0x${ccNumber.toString(16)} 0x${scaledValue.toString(16)}`
+  });
   
-  console.log('📤 Sending MIX via NRPN:', { opNumber, nrpn, scaledValue });
-  sendNRPN(nrpn, channel);
+  sendCC(ccNumber, scaledValue, channel);
 }
 
 /**
- * Send operator pan (panoramique) for operators 1-6
- * Note: PAN is controlled via NRPN, not CC
- * NRPN [0, 17+(opNumber-1)*2] for PAN1-PAN6 (interleaved with MIX)
+ * Send operator pan (panoramique) for operators 1-4
+ * REAL MAPPING (tested empirically): Mix and Pan are INTERLEAVED
+ * Mix: CC 22, 24, 26, 28 (even numbers starting at 22)
+ * Pan: CC 23, 25, 27, 29 (odd numbers starting at 23)
+ * Formula: CC = 23 + (opNumber-1) * 2
  */
 export function sendOperatorPan(opNumber: number, value: number, channel: number = currentChannel) {
   console.log('🎹 sendOperatorPan called:', { opNumber, value, channel, hasOutput: !!midiOutput });
   
-  if (opNumber < 1 || opNumber > 6) {
-    console.warn('⚠️ Operator pan only available for operators 1-6, got:', opNumber);
+  if (opNumber < 1 || opNumber > 4) {
+    console.warn('⚠️ Pan CC only available for operators 1-4, got:', opNumber);
     return;
   }
   
+  // OP1-4: Interleaved mapping - Pan on odd CCs: 23, 25, 27, 29
   // value is -100 (left) to 100 (right) in UI
-  // PreenfM3 PAN range: 0-200 (0=left, 100=center, 200=right from official doc)
-  const scaledValue = Math.max(0, Math.min(200, Math.round(value + 100)));
+  // CC range: 0-127 (0=full left, 64=center, 127=full right)
+  const scaledValue = Math.max(0, Math.min(127, Math.round((value + 100) * 127 / 200)));
+  const ccNumber = 23 + (opNumber - 1) * 2; // CC23, CC25, CC27, CC29
   
+  console.log('📤 Sending PAN via CC:', {
+    opNumber,
+    ccNumber,
+    expectedParam: `Pan${opNumber}`,
+    originalValue: value,
+    scaledValue,
+    hex: `0x${(0xB0 + channel - 1).toString(16)} 0x${ccNumber.toString(16)} 0x${scaledValue.toString(16)}`
+  });
+  
+  sendCC(ccNumber, scaledValue, channel);
+}
+
+/**
+ * Send operator frequency for operators 1-6
+ * NRPN [0, 44+(opNumber-1)*4+2] for frequency multiplier
+ * Frequency is stored as freq * 100 in PreenFM3
+ */
+export function sendOperatorFrequency(opNumber: number, value: number, channel: number = currentChannel) {
+  console.log('🎹 sendOperatorFrequency called:', { opNumber, value, channel, hasOutput: !!midiOutput });
+  
+  if (opNumber < 1 || opNumber > 6) {
+    console.warn('⚠️ Operator frequency only available for operators 1-6, got:', opNumber);
+    return;
+  }
+  
+  // value is the frequency multiplier (e.g., 0-16)
+  // PreenFM3 stores freq * 100 (e.g., 1.00 -> 100, 16.00 -> 1600)
+  const scaledValue = Math.round(value * 100);
+  
+  const oscRowBase = 44 + (opNumber - 1) * 4;
   const nrpn: NRPNMessage = {
     paramMSB: 0,
-    paramLSB: 17 + (opNumber - 1) * 2, // PAN1=17, PAN2=19, PAN3=21, etc. (interleaved with MIX)
-    valueMSB: (scaledValue >> 7) & 0x7F, // Upper 7 bits (for values > 127)
-    valueLSB: scaledValue & 0x7F // Lower 7 bits
+    paramLSB: oscRowBase + 2, // frequencyMul offset
+    valueMSB: (scaledValue >> 7) & 0x7F,
+    valueLSB: scaledValue & 0x7F
   };
   
-  console.log('📤 Sending PAN via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
+  console.log('📤 Sending FREQUENCY via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send operator detune for operators 1-6
+ * NRPN [0, 44+(opNumber-1)*4+3] for detune
+ * Detune is centered at 1600 (0 detune = 1600, -16.00 = 0, +16.00 = 3200)
+ */
+export function sendOperatorDetune(opNumber: number, value: number, channel: number = currentChannel) {
+  console.log('🎹 sendOperatorDetune called:', { opNumber, value, channel, hasOutput: !!midiOutput });
+  
+  if (opNumber < 1 || opNumber > 6) {
+    console.warn('⚠️ Operator detune only available for operators 1-6, got:', opNumber);
+    return;
+  }
+  
+  // value is the detune (-9 to +9 typically)
+  // PreenFM3 stores as (detune * 100) + 1600 (centered at 1600 for 0 detune)
+  const scaledValue = Math.round((value * 100) + 1600);
+  
+  const oscRowBase = 44 + (opNumber - 1) * 4;
+  const nrpn: NRPNMessage = {
+    paramMSB: 0,
+    paramLSB: oscRowBase + 3, // detune offset
+    valueMSB: (scaledValue >> 7) & 0x7F,
+    valueLSB: scaledValue & 0x7F
+  };
+  
+  console.log('📤 Sending DETUNE via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send operator keyboard tracking for operators 1-6
+ * NRPN [0, 44+(opNumber-1)*4+1] for keyboard tracking
+ * Value: 0-200 (0 = -1.0, 100 = 0.0, 200 = +1.0)
+ */
+export function sendOperatorKeyboardTracking(opNumber: number, value: number, channel: number = currentChannel) {
+  console.log('🎹 sendOperatorKeyboardTracking called:', { opNumber, value, channel, hasOutput: !!midiOutput });
+  
+  if (opNumber < 1 || opNumber > 6) {
+    console.warn('⚠️ Operator keyboard tracking only available for operators 1-6, got:', opNumber);
+    return;
+  }
+  
+  // value is -1.0 to +1.0 in UI
+  // PreenFM3 stores as 0-200 (0 = -1.0, 100 = 0.0, 200 = +1.0)
+  const scaledValue = Math.round((value * 100) + 100);
+  
+  const oscRowBase = 44 + (opNumber - 1) * 4;
+  const nrpn: NRPNMessage = {
+    paramMSB: 0,
+    paramLSB: oscRowBase + 1, // keyboard tracking offset
+    valueMSB: (scaledValue >> 7) & 0x7F,
+    valueLSB: scaledValue & 0x7F
+  };
+  
+  console.log('📤 Sending KEYBOARD TRACKING via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send operator waveform for operators 1-6
+ * NRPN [0, 44+(opNumber-1)*4] for waveform shape
+ * Waveform ID: 0-13 (OFF, SINE, SAW, SQUARE, SIN_SQUARED, SIN_ZERO, SIN_POS, RAND, USER1-6)
+ */
+export function sendOperatorWaveform(opNumber: number, waveformId: number, channel: number = currentChannel) {
+  console.log('🎹 sendOperatorWaveform called:', { opNumber, waveformId, channel, hasOutput: !!midiOutput });
+  
+  if (opNumber < 1 || opNumber > 6) {
+    console.warn('⚠️ Operator waveform only available for operators 1-6, got:', opNumber);
+    return;
+  }
+  
+  const oscRowBase = 44 + (opNumber - 1) * 4;
+  const nrpn: NRPNMessage = {
+    paramMSB: 0,
+    paramLSB: oscRowBase, // shape offset (0)
+    valueMSB: (waveformId >> 7) & 0x7F,
+    valueLSB: waveformId & 0x7F
+  };
+  
+  console.log('📤 Sending WAVEFORM via NRPN:', { opNumber, nrpn, waveformId });
   sendNRPN(nrpn, channel);
 }
 
@@ -381,4 +500,114 @@ export function logMidiStatus() {
   console.log('  Output:', status.output);
   console.log('  Channel:', status.channel);
   return status;
+}
+
+/**
+ * Send modulation matrix parameter
+ * @param rowIndex Row number (0-11)
+ * @param paramType Parameter type: 'source', 'amount', 'destination1', 'destination2'
+ * @param value Value to send (numeric or string depending on paramType)
+ * @param channel MIDI channel
+ */
+export function sendModulationMatrixParam(
+  rowIndex: number,
+  paramType: 'source' | 'amount' | 'destination1' | 'destination2',
+  value: number | string,
+  channel: number = currentChannel
+) {
+  if (rowIndex < 0 || rowIndex >= 12) {
+    console.error('Invalid matrix row index:', rowIndex);
+    return;
+  }
+
+  // Calculate NRPN MSB and LSB base for this row
+  let msb: number, lsbBase: number;
+  if (rowIndex < 3) {
+    // Rows 0-2: MSB=0, LSB=116 + row*4
+    msb = 0;
+    lsbBase = 116 + rowIndex * 4;
+  } else {
+    // Rows 3-11: MSB=1, LSB=(row-3)*4
+    msb = 1;
+    lsbBase = (rowIndex - 3) * 4;
+  }
+
+  // Calculate LSB offset based on parameter type
+  let lsbOffset = 0;
+  let numericValue = 0;
+
+  switch (paramType) {
+    case 'source':
+      lsbOffset = 0;
+      numericValue = typeof value === 'string' ? getSourceIndex(value) : value;
+      break;
+    case 'amount':
+      lsbOffset = 1;
+      // Convert UI range (-1 to +1) to NRPN range (900 to 1100)
+      // Formula: multiplierValue = (amount * 100) + 1000
+      numericValue = Math.round((value as number) * 100 + 1000);
+      break;
+    case 'destination1':
+      lsbOffset = 2;
+      numericValue = typeof value === 'string' ? getDestinationIndex(value) : value;
+      break;
+    case 'destination2':
+      lsbOffset = 3;
+      numericValue = typeof value === 'string' ? getDestinationIndex(value) : value;
+      break;
+  }
+
+  const lsb = lsbBase + lsbOffset;
+
+  // Encode 14-bit value (0-16383)
+  const clampedValue = Math.max(0, Math.min(16383, numericValue));
+  const valueMSB = (clampedValue >> 7) & 0x7F;
+  const valueLSB = clampedValue & 0x7F;
+
+  const nrpn: NRPNMessage = {
+    paramMSB: msb,
+    paramLSB: lsb,
+    valueMSB,
+    valueLSB,
+  };
+
+  console.log(
+    `📤 Sending Matrix Row ${rowIndex + 1} ${paramType}:`,
+    typeof value === 'string' ? `"${value}" (${numericValue})` : value,
+    `NRPN [${msb},${lsb}] = [${valueMSB},${valueLSB}]`
+  );
+
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Get source index from source name
+ */
+function getSourceIndex(sourceName: string): number {
+  const sourceNames = [
+    'None', 'LFO 1', 'LFO 2', 'LFO 3', 'LFOEnv1', 'LFOEnv2', 'LFOSeq1', 'LFOSeq2',
+    'Modwheel', 'Pitchbend', 'Aftertouch', 'Velocity', 'Note1', 'CC1', 'CC2', 'CC3', 'CC4',
+    'Note2', 'Breath', 'MPE Slide', 'Random', 'Poly AT',
+    'User CC1', 'User CC2', 'User CC3', 'User CC4', 'PB MPE', 'AT MPE',
+  ];
+  const index = sourceNames.indexOf(sourceName);
+  return index >= 0 ? index : 0;
+}
+
+/**
+ * Get destination index from destination name
+ */
+function getDestinationIndex(destName: string): number {
+  const destNames = [
+    'None', 'Gate', 'IM1', 'IM2', 'IM3', 'IM4', 'IM*',
+    'Mix1', 'Pan1', 'Mix2', 'Pan2', 'Mix3', 'Pan3', 'Mix4', 'Pan4', 'Mix*', 'Pan*',
+    'o1 Fq', 'o2 Fq', 'o3 Fq', 'o4 Fq', 'o5 Fq', 'o6 Fq', 'o* Fq',
+    'Env1 A', 'Env2 A', 'Env3 A', 'Env4 A', 'Env5 A', 'Env6 A', 'Env* A', 'Env* R',
+    'Mtx1 x', 'Mtx2 x', 'Mtx3 x', 'Mtx4 x',
+    'Lfo1 F', 'Lfo2 F', 'Lfo3 F', 'Env2 S', 'Seq1 G', 'Seq2 G',
+    'Flt1 P1', 'o* FqH', 'Env* D', 'EnvM A', 'EnvM D', 'EnvM R',
+    'Mtx FB', 'Flt1 P2', 'Flt1 G', 'Flt2 P1', 'Flt2 P2', 'Flt2 G',
+  ];
+  const index = destNames.indexOf(destName);
+  return index >= 0 ? index : 0;
 }

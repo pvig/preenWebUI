@@ -1,4 +1,4 @@
-import { Select, MenuItem } from '@mui/material';
+import styled from 'styled-components';
 
 interface KeyboardTrackingSelectProps {
   value: number;
@@ -11,23 +11,53 @@ const trackingModes = [
   { value: 2, label: 'Finetune Hz' }
 ];
 
+const ControlContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const ControlLabel = styled.label`
+  color: ${props => props.theme.colors.textMuted};
+  font-size: 0.75rem;
+  text-transform: uppercase;
+`;
+
+const StyledSelect = styled.select`
+  background: ${props => props.theme.colors.button};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
+  color: ${props => props.theme.colors.text};
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  min-width: 120px;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+  
+  &:hover {
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
+
 export const KeyboardTrackingSelect: React.FC<KeyboardTrackingSelectProps> = ({ value, onChange }) => {
   return (
-    <div className="operator-control">
-      <label>Tracking clavier</label>
-      <Select
+    <ControlContainer>
+      <ControlLabel>Tracking clavier</ControlLabel>
+      <StyledSelect
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        size="small"
-        variant="standard"
       >
-        {trackingModes.map(wave => (
-          <MenuItem key={wave.value} value={wave.value}>
-            {wave.label}
-          </MenuItem>
+        {trackingModes.map(mode => (
+          <option key={mode.value} value={mode.value}>
+            {mode.label}
+          </option>
         ))}
-      </Select>
-    </div>
+      </StyledSelect>
+    </ControlContainer>
   );
 }
 

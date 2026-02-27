@@ -118,7 +118,7 @@ export const LfoEditor: React.FC = () => {
             ))}
           </LfoTabs>
         </HeaderLeft>
-        
+
         <LfoWaveformSelector
           value={lfo.shape}
           onChange={(shape) => updateLfo(activeLfo, { shape })}
@@ -128,8 +128,8 @@ export const LfoEditor: React.FC = () => {
       <LfoControls>
         <ControlGroup>
           <ControlLabel>Sync Mode</ControlLabel>
-          <Select 
-            value={lfo.syncMode} 
+          <Select
+            value={lfo.syncMode}
             onChange={(e) => updateLfo(activeLfo, { syncMode: e.target.value as 'Int' | 'Ext' })}
           >
             <option value="Int">Internal (0-99.9 Hz)</option>
@@ -151,6 +151,7 @@ export const LfoEditor: React.FC = () => {
               strokeColor={theme.colors.knobStroke}
               renderLabel={(v) => v.toFixed(1) + ' Hz'}
               label="Frequency"
+              labelPosition="left"
             />
           ) : (
             <div>
@@ -182,6 +183,7 @@ export const LfoEditor: React.FC = () => {
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => Math.round(v) + '°'}
             label="Phase"
+            labelPosition="left"
           />
         </ControlGroup>
 
@@ -198,6 +200,7 @@ export const LfoEditor: React.FC = () => {
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => v.toFixed(2)}
             label="Bias"
+            labelPosition="left"
           />
         </ControlGroup>
 
@@ -217,6 +220,7 @@ export const LfoEditor: React.FC = () => {
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => v < 0 ? 'Off' : v.toFixed(1)}
             label="KeySync"
+            labelPosition="left"
           />
         </ControlGroup>
       </LfoControls>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { PatchEditor } from './screens/PatchEditor';
 import { ModulationsEditor } from './screens/modulationsEditor';
@@ -6,6 +6,7 @@ import { ArpFilterEditor } from './screens/ArpFilterEditor';
 import { EffectsEditor } from './screens/EffectsEditor';
 import { PatchLibrary } from './screens/PatchLibrary';
 import { MidiMenu } from './components/MidiMenu';
+import { MidiCCTester } from './components/MidiCCTester';
 import { ThemeToggle } from './theme/ThemeToggle';
 import { useThemeStore } from './theme/themeStore';
 import { GlobalStyles } from './theme/GlobalStyles';
@@ -26,6 +27,26 @@ const Header = styled.header`
   padding: 0.5rem 1rem;
   background-color: ${props => props.theme.colors.backgroundSecondary};
   border-bottom: 1px solid ${props => props.theme.colors.border};
+`;
+
+const HeaderRight = styled.div`
+  display: flex;
+  gap: 10px;
+  align-items: center;
+`;
+
+const TestButton = styled.button`
+  background: ${props => props.theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  
+  &:hover {
+    opacity: 0.9;
+  }
 `;
 
 const Nav = styled.nav`
@@ -62,7 +83,21 @@ const Main = styled.main`
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('patch');
+  const [showCCTester, setShowCCTester] = useState(false);
   const { theme } = useThemeStore();
+
+  // Keyboard shortcut: Ctrl+T to toggle CC Tester
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+        e.preventDefault();
+        setShowCCTester(prev => !prev);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
 
   return (
     <ThemeProvider theme={theme}>
@@ -70,7 +105,12 @@ export default function App() {
       <AppContainer>
         <Header>
           <MidiMenu />
-          <ThemeToggle />
+          <HeaderRight>
+            <TestButton onClick={() => setShowCCTester(prev => !prev)}>
+              🧪 Test CC
+            </TestButton>
+            <ThemeToggle />
+          </HeaderRight>
         </Header>
         
         <Nav>
@@ -98,6 +138,8 @@ export default function App() {
           {currentScreen === 'effects' && <EffectsEditor />}
           {currentScreen === 'library' && <PatchLibrary />}
         </Main>
+        
+        {showCCTester && <MidiCCTester onClose={() => setShowCCTester(false)} />}
       </AppContainer>
     </ThemeProvider>
   );
