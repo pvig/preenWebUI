@@ -2,6 +2,7 @@ import { useState } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { PatchEditor } from './screens/PatchEditor';
 import { ModulationsEditor } from './screens/modulationsEditor';
+import { ArpFilterEditor } from './screens/ArpFilterEditor';
 import { EffectsEditor } from './screens/EffectsEditor';
 import { PatchLibrary } from './screens/PatchLibrary';
 import { MidiMenu } from './components/MidiMenu';
@@ -9,7 +10,7 @@ import { ThemeToggle } from './theme/ThemeToggle';
 import { useThemeStore } from './theme/themeStore';
 import { GlobalStyles } from './theme/GlobalStyles';
 
-type AppScreen = 'patch' | 'matrix'| 'effects'  | 'library';
+type AppScreen = 'patch' | 'matrix' | 'arpfilter' | 'effects' | 'library';
 
 const AppContainer = styled.div`
   background-color: ${props => props.theme.colors.background};
@@ -79,6 +80,9 @@ export default function App() {
           <button onClick={() => setCurrentScreen('matrix')} className={currentScreen === 'matrix' ? 'active' : ''}>
             Modulations
           </button>
+          <button onClick={() => setCurrentScreen('arpfilter')} className={currentScreen === 'arpfilter' ? 'active' : ''}>
+            Arp/Filter
+          </button>
           <button onClick={() => setCurrentScreen('effects')} className={currentScreen === 'effects' ? 'active' : ''}>
             Effets
           </button>
@@ -90,6 +94,7 @@ export default function App() {
         <Main>
           {currentScreen === 'patch' && <PatchEditor />}
           {currentScreen === 'matrix' && <ModulationsEditor />}
+          {currentScreen === 'arpfilter' && <ArpFilterEditor />}
           {currentScreen === 'effects' && <EffectsEditor />}
           {currentScreen === 'library' && <PatchLibrary />}
         </Main>

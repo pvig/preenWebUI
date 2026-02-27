@@ -99,13 +99,43 @@ const createDefaultPatch = (): Patch => ({
     }
   },
 
+  filters: [
+    {
+      type: 'OFF',
+      param1: 0,
+      param2: 0,
+      gain: 0
+    },
+    {
+      type: 'OFF',
+      param1: 0,
+      param2: 0,
+      gain: 0
+    }
+  ],
+
   arpeggiator: {
-    enabled: false,
-    pattern: 'UP',
-    rate: 0.125,
-    gate: 0.8,
-    octaves: 1
+    clock: 120,
+    direction: 'Up',
+    octave: 1,
+    pattern: 'Pattern1',
+    division: '1/8',
+    duration: '50%',
+    latch: 'Off'
   },
+
+  noteCurves: [
+    {
+      before: 'Flat',
+      breakNote: 60,  // Note C3/C4 (MIDI middle C)
+      after: 'Flat'
+    },
+    {
+      before: 'Flat',
+      breakNote: 60,
+      after: 'Flat'
+    }
+  ],
 
   midi: {
     channel: 1,
@@ -186,6 +216,15 @@ interface PatchStore extends EditorState {
   // Actions globales
   updateGlobal: (changes: Partial<Patch['global']>) => void;
   updateEffects: (changes: Partial<GlobalEffects>) => void;
+
+  // Actions pour les filtres
+  updateFilter: (filterIndex: 0 | 1, changes: Partial<import('../types/patch').Filter>) => void;
+
+  // Actions pour l'arpégiateur
+  updateArpeggiator: (changes: Partial<import('../types/patch').ArpeggiatorSettings>) => void;
+
+  // Actions pour les note curves
+  updateNoteCurve: (curveIndex: 0 | 1, changes: Partial<import('../types/patch').NoteCurve>) => void;
 
   // Actions de l'éditeur
   selectOperator: (id: number) => void;
@@ -448,6 +487,34 @@ export const usePatchStore = create<PatchStore>()(
         updateLastModified(state.currentPatch);
       }),
 
+    // Actions pour les filtres
+    updateFilter: (filterIndex: 0 | 1, changes: Partial<import('../types/patch').Filter>) =>
+      set((state) => {
+        if (filterIndex >= 0 && filterIndex < 2) {
+          Object.assign(state.currentPatch.filters[filterIndex], changes);
+          state.isModified = true;
+          updateLastModified(state.currentPatch);
+        }
+      }),
+
+    // Actions pour l'arpégiateur
+    updateArpeggiator: (changes: Partial<import('../types/patch').ArpeggiatorSettings>) =>
+      set((state) => {
+        Object.assign(state.currentPatch.arpeggiator, changes);
+        state.isModified = true;
+        updateLastModified(state.currentPatch);
+      }),
+
+    // Actions pour les note curves
+    updateNoteCurve: (curveIndex: 0 | 1, changes: Partial<import('../types/patch').NoteCurve>) =>
+      set((state) => {
+        if (curveIndex >= 0 && curveIndex < 2) {
+          Object.assign(state.currentPatch.noteCurves[curveIndex], changes);
+          state.isModified = true;
+          updateLastModified(state.currentPatch);
+        }
+      }),
+
     // Actions de l'éditeur
     selectOperator: (id: number) =>
       set((state) => {
@@ -671,6 +738,24 @@ export const updateModulationMatrixRow = (rowIndex: number, changes: Partial<Mod
 
 export const updateGlobal = (changes: Partial<Patch['global']>) =>
   usePatchStore.getState().updateGlobal(changes);
+
+export const useFilter = (filterIndex: 0 | 1) => usePatchStore(state => {
+  return state.currentPatch.filters[filterIndex];
+});
+export const updateFilter = (filterIndex: 0 | 1, changes: Partial<import('../types/patch').Filter>) =>
+  usePatchStore.getState().updateFilter(filterIndex, changes);
+
+export const useArpeggiator = () => usePatchStore(state => {
+  return state.currentPatch.arpeggiator;
+});
+export const updateArpeggiator = (changes: Partial<import('../types/patch').ArpeggiatorSettings>) =>
+  usePatchStore.getState().updateArpeggiator(changes);
+
+export const useNoteCurve = (curveIndex: 0 | 1) => usePatchStore(state => {
+  return state.currentPatch.noteCurves[curveIndex];
+});
+export const updateNoteCurve = (curveIndex: 0 | 1, changes: Partial<import('../types/patch').NoteCurve>) =>
+  usePatchStore.getState().updateNoteCurve(curveIndex, changes);
 
 export const useIsModified = () => usePatchStore(state => state.isModified);
 export const useActiveTab = () => usePatchStore(state => state.ui.activeTab);

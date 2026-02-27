@@ -36,11 +36,31 @@ export interface LFO {
   keysync: 'Off' | number; // Key sync: 'Off' ou 0.0-16.0 (délai de resync)
 }
 
+// Types de filtres basés sur le firmware PreenFM3
+export type Filter1Type = 
+  | 'OFF' | 'MIXER' | 'LP' | 'HP' | 'BASS' | 'BP' | 'CRUSHER' 
+  | 'LP2' | 'HP2' | 'BP2' | 'LP3' | 'HP3' | 'BP3' 
+  | 'PEAK' | 'NOTCH' | 'BELL' | 'LOWSHELF' | 'HIGHSHELF' 
+  | 'LPHP' | 'BPds' | 'LPWS' | 'TILT' | 'STEREO' 
+  | 'SAT' | 'SIGMOID' | 'FOLD' | 'WRAP' | 'XOR' 
+  | 'TEXTURE1' | 'TEXTURE2' | 'LPXOR' | 'LPXOR2' 
+  | 'LPSIN' | 'HPSIN' | 'QUADNOTCH' 
+  | 'AP4' | 'AP4B' | 'AP4D' 
+  | 'ORYX' | 'ORYX2' | 'ORYX3' 
+  | '18DB' | 'LADDER' | 'LADDER2' | 'DIOD' 
+  | 'KRMG' | 'TEEBEE' | 'SVFLH' | 'CRUSH2';
+
+export type Filter2Type = 
+  | 'OFF' | 'FLANGE' | 'DIMENSION' | 'CHORUS' | 'WIDE' 
+  | 'DOUBLER' | 'TRIPLER' | 'BODE' | 'DELAYCRUNCH' 
+  | 'PINGPONG' | 'DIFFUSER' | 'GRAIN1' | 'GRAIN2' 
+  | 'STEREO_BP' | 'PLUCK' | 'PLUCK2' | 'RESONATORS';
+
 export interface Filter {
-  type: 'LOW_PASS' | 'HIGH_PASS' | 'BAND_PASS' | 'NOTCH';
-  frequency: number;
-  resonance: number;
-  gain: number;
+  type: Filter1Type | Filter2Type;
+  param1: number;  // Frequency/Cutoff (0-255)
+  param2: number;  // Resonance/Q (0-255)
+  gain: number;    // Gain (0-255) for Filter1, or Mix for Filter2
 }
 
 export interface Operator {
@@ -91,12 +111,32 @@ export interface GlobalEffects {
   };
 }
 
+export type ArpDirection = 'Up' | 'Down' | 'UpDown' | 'Played' | 'Random' | 'Chord' | 'Rotate U' | 'Rotate D' | 'Shift U' | 'Shift D';
+export type ArpPattern = 'Pattern1' | 'Pattern2' | 'Pattern3' | 'Pattern4' | 'Pattern5' | 'Pattern6' | 'Pattern7' | 'Pattern8';
+export type ArpDivision = '2/1' | '3/2' | '1/1' | '2/3' | '1/2' | '1/3' | '1/4' | '1/6' | '1/8' | '1/12' | '1/16' | '1/24' | '1/32' | '1/48' | '1/96';
+export type ArpDuration = '5%' | '10%' | '25%' | '50%' | '75%' | '85%' | '95%' | '100%';
+export type ArpLatch = 'Off' | 'On';
+
 export interface ArpeggiatorSettings {
-  enabled: boolean;
-  pattern: 'UP' | 'DOWN' | 'UP_DOWN' | 'RANDOM' | 'ORDER';
-  rate: number;
-  gate: number;
-  octaves: number;
+  clock: number;         // BPM: NRPN 0 (0-240)
+  direction: ArpDirection;  // NRPN 1 (0-9)
+  octave: number;        // NRPN 2 (1-3)
+  pattern: ArpPattern;   // NRPN 3 (0-7)
+  division: ArpDivision; // NRPN 4 (0-14)
+  duration: ArpDuration; // NRPN 5 (0-7)
+  latch: ArpLatch;       // NRPN 6 (0-1)
+}
+
+// Note Curve types (courbes de scaling des notes)
+export type NoteCurveType = 
+  | 'Flat' | 'M Lin1' | 'M Lin2' | 'M Lin3' 
+  | 'M Exp1' | 'M Exp2' | 'P Lin1' | 'P Lin2' 
+  | 'P Lin3' | 'P Exp1' | 'P Exp2';
+
+export interface NoteCurve {
+  before: NoteCurveType;  // Courbe avant le breakpoint
+  breakNote: number;      // Note de breakpoint (0-127)
+  after: NoteCurveType;   // Courbe après le breakpoint
 }
 
 export interface MIDISettings {
@@ -147,8 +187,14 @@ export interface Patch {
   // Effets globaux
   effects: GlobalEffects;
 
+  // Filtres (2 filtres indépendants)
+  filters: [Filter, Filter];
+
   // Arpégiateur
   arpeggiator: ArpeggiatorSettings;
+
+  // Note Curves (2 courbes de scaling des notes)
+  noteCurves: [NoteCurve, NoteCurve];
 
   // Paramètres MIDI
   midi: MIDISettings;
