@@ -97,7 +97,7 @@ const CarrierControls = () => {
               max={127}
               value={operator?.amplitude ?? 0}
               onChange={val => updateOperator(id, { amplitude: val })}
-              color="#68D391"
+              color={theme.colors.knobVolume}
               backgroundColor={theme.colors.knobBackground}
               strokeColor={theme.colors.knobStroke}
               renderLabel={(val) => Math.round(val)}

@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { WaveformType, getWaveformId } from '../types/waveform';
-import { sendOperatorMix, sendOperatorPan, sendOperatorFrequency, sendOperatorDetune, sendOperatorWaveform, sendOperatorKeyboardTracking } from '../midi/midiService';
+import { sendOperatorMix, sendOperatorPan, sendOperatorFrequency, sendOperatorDetune, sendOperatorWaveform, sendOperatorKeyboardTracking, sendOperatorADSR, sendModulationIM, sendModulationVelo, calculateIMIndex } from '../midi/midiService';
 
 import {
   Patch,
@@ -813,8 +813,21 @@ export const useOperatorEnvelope = (operatorId: number) => usePatchStore(state =
   const operator = currentPatch.operators.find(osc => osc.id === operatorId);
   return operator?.adsr;
 });
-export const updateADSR = (operatorId: number, envelope: Partial<AdsrState>) =>
+
+export const updateADSR = (operatorId: number, envelope: Partial<AdsrState>, sendMidi: boolean = true) => {
+  // Update store first
   usePatchStore.getState().updateADSR(operatorId, envelope);
+  
+  // Send MIDI if requested
+  if (sendMidi) {
+    // Get the complete ADSR after update to send all parameters
+    const operator = usePatchStore.getState().currentPatch.operators.find(op => op.id === operatorId);
+    if (operator && operator.adsr) {
+      console.log('📤 ADSR changed, sending to PreenFM3:', { operatorId, adsr: operator.adsr });
+      sendOperatorADSR(operatorId, operator.adsr);
+    }
+  }
+};
 
 export const useLfo = (lfoIndex: 0 | 1 | 2) => usePatchStore(state => {
   // S'assurer que lfos existe (compatibilité avec les anciens patches)
@@ -846,11 +859,43 @@ export const useStepSequencer = (seqIndex: 0 | 1) => usePatchStore(state => {
 export const updateStepSequencer = (seqIndex: 0 | 1, changes: Partial<import('../types/modulation').StepSequencer>) =>
   usePatchStore.getState().updateStepSequencer(seqIndex, changes);
 
-export const updateModulationAmount = (sourceId: number, targetId: number, amount: number) =>
+export const updateModulationAmount = (sourceId: number, targetId: number, amount: number, sendMidi: boolean = true) => {
+  // Update store first
   usePatchStore.getState().updateModulationAmount(sourceId, targetId, amount);
+  
+  // Send MIDI if requested
+  if (sendMidi) {
+    const patch = usePatchStore.getState().currentPatch;
+    const isFeedback = sourceId === targetId;
+    const imIndex = calculateIMIndex(patch, sourceId, targetId);
+    
+    if (imIndex >= 0 && imIndex < 6) {
+      console.log('📤 IM changed, sending to PreenFM3:', { sourceId, targetId, imIndex, isFeedback, amount });
+      sendModulationIM(imIndex, amount, isFeedback);
+    } else {
+      console.warn('⚠️ Could not find IM index for modulation link:', { sourceId, targetId, imIndex });
+    }
+  }
+};
 
-export const updateModulationVelo = (sourceId: number, targetId: number, velo: number) =>
+export const updateModulationVelo = (sourceId: number, targetId: number, velo: number, sendMidi: boolean = true) => {
+  // Update store first
   usePatchStore.getState().updateModulationVelo(sourceId, targetId, velo);
+  
+  // Send MIDI if requested
+  if (sendMidi) {
+    const patch = usePatchStore.getState().currentPatch;
+    const isFeedback = sourceId === targetId;
+    const imIndex = calculateIMIndex(patch, sourceId, targetId);
+    
+    if (imIndex >= 0 && imIndex < 6) {
+      console.log('📤 IM Velo changed, sending to PreenFM3:', { sourceId, targetId, imIndex, isFeedback, velo });
+      sendModulationVelo(imIndex, velo, isFeedback);
+    } else {
+      console.warn('⚠️ Could not find IM index for velo link:', { sourceId, targetId, imIndex });
+    }
+  }
+};
 
 export const updateModulationMatrixRow = (rowIndex: number, changes: Partial<ModulationMatrixRow>) =>
   usePatchStore.getState().updateModulationMatrixRow(rowIndex, changes);

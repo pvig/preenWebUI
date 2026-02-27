@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useCurrentPatch, usePatchStore } from '../../stores/patchStore';
+import { useThemeStore } from '../../theme/themeStore';
 import KnobBase from '../knobs/KnobBase';
 import { sendModulationMatrixParam } from '../../midi/midiService';
 
@@ -78,6 +79,7 @@ const MatrixSelect = styled.select`
  * Gère la matrice de modulation (12 lignes, chacune avec Source + 2 Destinations)
  */
 export const MatrixEditor: React.FC = () => {
+  const { theme } = useThemeStore();
   const currentPatch = useCurrentPatch();
   const updateModulationMatrixRow = usePatchStore((state) => state.updateModulationMatrixRow);
 
@@ -152,9 +154,9 @@ export const MatrixEditor: React.FC = () => {
                   value={row.amount}
                   onChange={(value) => handleAmountChange(index, value)}
                   step={0.01}
-                  color="#4A9EFF"
-                  backgroundColor="#2A2A2A"
-                  strokeColor="#444"
+                  color={theme.colors.knobModulation}
+                  backgroundColor={theme.colors.knobBackground}
+                  strokeColor={theme.colors.knobStroke}
                   renderLabel={(val) => val.toFixed(2)}
                   label={null}
                   valuePosition="left"

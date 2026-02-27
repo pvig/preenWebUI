@@ -154,10 +154,19 @@ export class PreenFM3Parser {
       ];
       const waveform = waveforms[Math.min(waveformValue, 13)] || 'SINE';
       
-      // Keyboard Tracking (encoder 1: frequencyType)
-      // 0-200 in firmware (0 = -1.0, 100 = 0.0, 200 = +1.0)
-      const kbdTrackValue = this.getValue(0, oscRowBase + 1) ?? 100;
-      const keyboardTracking = (kbdTrackValue - 100) / 100;
+      // Frequency Type / Keyboard Tracking (encoder 1: frequencyType)
+      // PreenFM3 firmware: 0=Keyboard, 1=Fixed, 2=Finetune
+      // UI expects: 0=Fixed, 1=Keyboard, 2=Finetune
+      // Need to swap 0 and 1 when reading
+      const freqTypeValue = this.getValue(0, oscRowBase + 1) ?? 0;
+      let keyboardTracking: number;
+      if (freqTypeValue === 0) {
+        keyboardTracking = 1; // Keyboard in firmware -> 1 in UI
+      } else if (freqTypeValue === 1) {
+        keyboardTracking = 0; // Fixed in firmware -> 0 in UI
+      } else {
+        keyboardTracking = 2; // Finetune stays 2
+      }
       
       // Fréquence (encoder 2: frequencyMul)
       const freqValue = this.getValue(0, oscRowBase + 2) ?? 1600;
@@ -249,28 +258,38 @@ export class PreenFM3Parser {
     // Modulation Indexes (IM1-IM6): indices 4, 6, 8, 10, 12, 14
     // Modulation Velo (IMVelo1-6): indices 5, 7, 9, 11, 13, 15
     // Based on firmware row structure: ROW_MODULATION1/2/3 with alternating encoders
-    const im1 = (this.getValue(0, 4) ?? 0) / 10; // Index 4: IM1 (0-100 -> 0-10)
+    // NOTE: IM6 (feedback) uses different scale: 0-100 (0.0-1.0), others use 0-1000 (0.0-10.0)
+    const im1 = (this.getValue(0, 4) ?? 0) / 10; // Index 4: IM1 (0-1000 -> 0-100)
     const im2 = (this.getValue(0, 6) ?? 0) / 10; // Index 6: IM2
     const im3 = (this.getValue(0, 8) ?? 0) / 10; // Index 8: IM3
     const im4 = (this.getValue(0, 10) ?? 0) / 10; // Index 10: IM4
     const im5 = (this.getValue(0, 12) ?? 0) / 10; // Index 12: IM5
-    const im6 = (this.getValue(0, 14) ?? 0) / 10; // Index 14: IM6 (feedback)
+    const im6 = (this.getValue(0, 14) ?? 0); // Index 14: IM6 (feedback, 0-100 -> 0-100)
     
-    const imVelo1 = (this.getValue(0, 5) ?? 0) / 10; // Index 5: IMVelo1
+    const imVelo1 = (this.getValue(0, 5) ?? 0) / 10; // Index 5: IMVelo1 (0-1000 -> 0-100)
     const imVelo2 = (this.getValue(0, 7) ?? 0) / 10; // Index 7: IMVelo2
     const imVelo3 = (this.getValue(0, 9) ?? 0) / 10; // Index 9: IMVelo3
     const imVelo4 = (this.getValue(0, 11) ?? 0) / 10; // Index 11: IMVelo4
     const imVelo5 = (this.getValue(0, 13) ?? 0) / 10; // Index 13: IMVelo5
-    const imVelo6 = (this.getValue(0, 15) ?? 0) / 10; // Index 15: IMVelo6
+    const imVelo6 = (this.getValue(0, 15) ?? 0); // Index 15: IMVelo6 (feedback, 0-100 -> 0-100)
     
     const ims = [im1, im2, im3, im4, im5, im6];
     const imVelos = [imVelo1, imVelo2, imVelo3, imVelo4, imVelo5, imVelo6];
     
     // Appliquer les IMs aux targets (basé sur la topologie de l'algorithme)
+    // NOTE: Feedback (self-loop) always uses IM6/IMVelo6, regardless of sequential position
     let imIndex = 0;
     operators.forEach(op => {
       op.target.forEach(target => {
-        if (imIndex < ims.length) {
+        // Check if this is a feedback (self-loop): target.id is the target operator's ID
+        const isFeedback = target.id === op.id;
+        
+        if (isFeedback) {
+          // Feedback always uses IM6 (index 5) and IMVelo6
+          target.im = ims[5];
+          target.modulationIndexVelo = imVelos[5] ?? 0;
+        } else if (imIndex < 5) {
+          // Regular modulation uses sequential IM1-5
           target.im = ims[imIndex];
           target.modulationIndexVelo = imVelos[imIndex] ?? 0;
           imIndex++;

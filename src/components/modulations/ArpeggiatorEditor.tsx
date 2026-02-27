@@ -108,7 +108,7 @@ export const ArpeggiatorEditor: React.FC = () => {
             step={1}
             value={arp.clock}
             onChange={(clock) => updateArpeggiator({ clock })}
-            color="#E53E3E"
+            color={theme.colors.knobArp}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => Math.round(v)}
@@ -140,7 +140,7 @@ export const ArpeggiatorEditor: React.FC = () => {
             step={1}
             value={arp.octave}
             onChange={(octave) => updateArpeggiator({ octave })}
-            color="#38A169"
+            color={theme.colors.knobVolume}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => Math.round(v)}

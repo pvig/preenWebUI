@@ -219,7 +219,7 @@ export const LfoEnvEditor: React.FC = () => {
                 onChange={(time) => updateLfoEnvelope(activeEnv, { 
                   adsr: { ...env.adsr, attack: { ...env.adsr.attack, time } } 
                 })}
-                color="#F56565"
+                color={theme.colors.adsrAttack}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
@@ -238,7 +238,7 @@ export const LfoEnvEditor: React.FC = () => {
                 onChange={(level) => updateLfoEnvelope(activeEnv, { 
                   adsr: { ...env.adsr, attack: { ...env.adsr.attack, level } } 
                 })}
-                color="#F6AD55"
+                color={theme.colors.knobBias}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => Math.round(v)}
@@ -257,7 +257,7 @@ export const LfoEnvEditor: React.FC = () => {
                 onChange={(time) => updateLfoEnvelope(activeEnv, { 
                   adsr: { ...env.adsr, decay: { ...env.adsr.decay, time } } 
                 })}
-                color="#48BB78"
+                color={theme.colors.adsrDecay}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
@@ -280,7 +280,7 @@ export const LfoEnvEditor: React.FC = () => {
                     sustain: { ...env.adsr.sustain, level } // Sustain level follows decay level
                   } 
                 })}
-                color="#4299E1"
+                color={theme.colors.adsrSustain}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => Math.round(v)}
@@ -299,7 +299,7 @@ export const LfoEnvEditor: React.FC = () => {
                 onChange={(time) => updateLfoEnvelope(activeEnv, { 
                   adsr: { ...env.adsr, sustain: { ...env.adsr.sustain, time } } 
                 })}
-                color="#9F7AEA"
+                color={theme.colors.knobLfo}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
@@ -320,7 +320,7 @@ export const LfoEnvEditor: React.FC = () => {
                 onChange={(time) => updateLfoEnvelope(activeEnv, { 
                   adsr: { ...env.adsr, release: { ...env.adsr.release, time } } 
                 })}
-                color="#63B3ED"
+                color={theme.colors.adsrRelease}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
@@ -340,7 +340,7 @@ export const LfoEnvEditor: React.FC = () => {
                 step={0.01}
                 value={env.silence}
                 onChange={(silence) => updateLfoEnvelope(activeEnv, { silence })}
-                color="#9CA3AF"
+                color={theme.colors.knobSeq}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
@@ -359,7 +359,7 @@ export const LfoEnvEditor: React.FC = () => {
                 onChange={(time) => updateLfoEnvelope(activeEnv, { 
                   adsr: { ...env.adsr, attack: { time, level: 100 } }  // Level fixed at 100
                 })}
-                color="#F56565"
+                color={theme.colors.adsrAttack}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
@@ -378,7 +378,7 @@ export const LfoEnvEditor: React.FC = () => {
                 onChange={(time) => updateLfoEnvelope(activeEnv, { 
                   adsr: { ...env.adsr, decay: { time, level: 0 } }  // Level fixed at 0
                 })}
-                color="#63B3ED"
+                color={theme.colors.knobFrequency}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}

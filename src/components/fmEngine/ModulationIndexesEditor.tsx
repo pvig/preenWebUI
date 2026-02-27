@@ -237,8 +237,8 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
                 max={100}
                 value={link.im}
                 onChange={(val) => handleIMChange(link.sourceId, link.targetId, Math.round(val))}
-                color="#0ea5e9"
-                backgroundColor="#1a202c"
+                color={theme.colors.knobModulation}
+                backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(val) => Math.round(val)}
                 label="IM"
@@ -251,8 +251,8 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
                 max={100}
                 value={link.modulationIndexVelo}
                 onChange={(val) => handleVeloChange(link.sourceId, link.targetId, Math.round(val))}
-                color="#7c3aed"
-                backgroundColor="#1a202c"
+                color={theme.colors.knobVelocity}
+                backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(val) => Math.round(val)}
                 label="Velo"

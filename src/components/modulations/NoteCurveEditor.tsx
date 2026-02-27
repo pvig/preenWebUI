@@ -128,7 +128,7 @@ export const NoteCurveEditor: React.FC<NoteCurveEditorProps> = ({ curveIndex }) 
             step={1}
             value={curve.breakNote}
             onChange={(breakNote) => updateNoteCurve(curveIndex, { breakNote })}
-            color="#9F7AEA"
+            color={theme.colors.knobLfo}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => noteToName(Math.round(v))}

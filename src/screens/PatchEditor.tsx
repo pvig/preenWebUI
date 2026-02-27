@@ -53,7 +53,7 @@ export function PatchEditor() {
           onChange={(val) =>
             updateGlobal({ velocitySensitivity: Math.round(val) })
           }
-          color="#FF9800"
+          color={theme.colors.knobVelocity}
           backgroundColor={theme.colors.knobBackground}
           strokeColor={theme.colors.knobStroke}
           renderLabel={(v) => Math.round(v)}
@@ -74,7 +74,7 @@ export function PatchEditor() {
           onChange={(val) =>
             updateGlobal({ polyphony: Math.round(val) })
           }
-          color="#63B3ED"
+          color={theme.colors.knobFrequency}
           backgroundColor={theme.colors.knobBackground}
           strokeColor={theme.colors.knobStroke}
           renderLabel={(v) => Math.round(v)}
@@ -92,7 +92,7 @@ export function PatchEditor() {
           onChange={(val) =>
             updateGlobal({ glideTime: Math.round(val) })
           }
-          color="#9F7AEA"
+          color={theme.colors.knobLfo}
           backgroundColor={theme.colors.knobBackground}
           strokeColor={theme.colors.knobStroke}
           renderLabel={(v) => Math.round(v)}

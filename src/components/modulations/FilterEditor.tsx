@@ -133,7 +133,7 @@ export const FilterEditor: React.FC<FilterEditorProps> = ({ filterIndex }) => {
             step={1}
             value={filter.param1}
             onChange={(param1) => updateFilter(filterIndex, { param1 })}
-            color="#F56565"
+            color={theme.colors.knobFilter}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => Math.round(v)}
@@ -150,7 +150,7 @@ export const FilterEditor: React.FC<FilterEditorProps> = ({ filterIndex }) => {
             step={1}
             value={filter.param2}
             onChange={(param2) => updateFilter(filterIndex, { param2 })}
-            color="#48BB78"
+            color={theme.colors.knobPhase}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => Math.round(v)}
@@ -167,7 +167,7 @@ export const FilterEditor: React.FC<FilterEditorProps> = ({ filterIndex }) => {
             step={1}
             value={filter.gain}
             onChange={(gain) => updateFilter(filterIndex, { gain })}
-            color="#4299E1"
+            color={theme.colors.knobFrequency}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => Math.round(v)}

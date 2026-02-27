@@ -325,9 +325,9 @@ export function sendOperatorDetune(opNumber: number, value: number, channel: num
 }
 
 /**
- * Send operator keyboard tracking for operators 1-6
+ * Send operator keyboard tracking (frequency type) for operators 1-6
  * NRPN [0, 44+(opNumber-1)*4+1] for keyboard tracking
- * Value: 0-200 (0 = -1.0, 100 = 0.0, 200 = +1.0)
+ * UI: 0=Fixed, 1=Keyboard, 2=Finetune | PreenFM3: 0=Keyboard, 1=Fixed, 2=Finetune
  */
 export function sendOperatorKeyboardTracking(opNumber: number, value: number, channel: number = currentChannel) {
   console.log('🎹 sendOperatorKeyboardTracking called:', { opNumber, value, channel, hasOutput: !!midiOutput });
@@ -337,19 +337,27 @@ export function sendOperatorKeyboardTracking(opNumber: number, value: number, ch
     return;
   }
   
-  // value is -1.0 to +1.0 in UI
-  // PreenFM3 stores as 0-200 (0 = -1.0, 100 = 0.0, 200 = +1.0)
-  const scaledValue = Math.round((value * 100) + 100);
+  // UI values: 0=Fixed, 1=Keyboard, 2=Finetune
+  // PreenFM3 firmware values: 0=Keyboard, 1=Fixed, 2=Finetune
+  // Need to swap 0 and 1
+  let frequencyType: number;
+  if (value === 0) {
+    frequencyType = 1; // Fixed in UI -> 1 in firmware
+  } else if (value === 1) {
+    frequencyType = 0; // Keyboard in UI -> 0 in firmware
+  } else {
+    frequencyType = 2; // Finetune stays 2
+  }
   
   const oscRowBase = 44 + (opNumber - 1) * 4;
   const nrpn: NRPNMessage = {
     paramMSB: 0,
-    paramLSB: oscRowBase + 1, // keyboard tracking offset
-    valueMSB: (scaledValue >> 7) & 0x7F,
-    valueLSB: scaledValue & 0x7F
+    paramLSB: oscRowBase + 1, // frequency type offset
+    valueMSB: (frequencyType >> 7) & 0x7F,
+    valueLSB: frequencyType & 0x7F
   };
   
-  console.log('📤 Sending KEYBOARD TRACKING via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
+  console.log('📤 Sending FREQUENCY TYPE via NRPN:', { opNumber, nrpn, frequencyType, originalValue: value });
   sendNRPN(nrpn, channel);
 }
 
@@ -376,6 +384,185 @@ export function sendOperatorWaveform(opNumber: number, waveformId: number, chann
   
   console.log('📤 Sending WAVEFORM via NRPN:', { opNumber, nrpn, waveformId });
   sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send operator ADSR envelope for operators 1-6
+ * NRPN [0, 68+(opNumber-1)*8 + offset] for envelope parameters
+ * Offsets: 0=AttackTime, 1=AttackLevel, 2=DecayTime, 3=DecayLevel,
+ *          4=SustainTime, 5=SustainLevel, 6=ReleaseTime, 7=ReleaseLevel
+ * UI uses ABSOLUTE times, firmware uses RELATIVE times (must convert)
+ * Times are in centiseconds (multiply by 100)
+ */
+export function sendOperatorADSR(opNumber: number, adsr: import('../types/adsr').AdsrState, channel: number = currentChannel) {
+  console.log('🎹 sendOperatorADSR called:', { opNumber, adsr, channel, hasOutput: !!midiOutput });
+  
+  if (opNumber < 1 || opNumber > 6) {
+    console.warn('⚠️ Operator ADSR only available for operators 1-6, got:', opNumber);
+    return;
+  }
+  
+  // Convert from absolute times (UI) to relative times (firmware)
+  const attackTimeRel = adsr.attack.time;
+  const decayTimeRel = Math.max(0, adsr.decay.time - adsr.attack.time);
+  const sustainTimeRel = Math.max(0, adsr.sustain.time - adsr.decay.time);
+  const releaseTimeRel = Math.max(0, adsr.release.time - adsr.sustain.time);
+  
+  // Convert to centiseconds (multiply by 100) and clamp to 0-16000
+  const attackTimeValue = Math.round(Math.max(0, Math.min(16000, attackTimeRel * 100)));
+  const decayTimeValue = Math.round(Math.max(0, Math.min(16000, decayTimeRel * 100)));
+  const sustainTimeValue = Math.round(Math.max(0, Math.min(16000, sustainTimeRel * 100)));
+  const releaseTimeValue = Math.round(Math.max(0, Math.min(16000, releaseTimeRel * 100)));
+  
+  // Levels are already 0-100
+  const attackLevel = Math.round(Math.max(0, Math.min(100, adsr.attack.level)));
+  const decayLevel = Math.round(Math.max(0, Math.min(100, adsr.decay.level)));
+  const sustainLevel = Math.round(Math.max(0, Math.min(100, adsr.sustain.level)));
+  const releaseLevel = Math.round(Math.max(0, Math.min(100, adsr.release.level)));
+  
+  const envRowBase = 68 + (opNumber - 1) * 8;
+  
+  console.log('📤 Sending ADSR via NRPN:', { 
+    opNumber, 
+    envRowBase,
+    times: { attackTimeValue, decayTimeValue, sustainTimeValue, releaseTimeValue },
+    levels: { attackLevel, decayLevel, sustainLevel, releaseLevel }
+  });
+  
+  // Send all 8 NRPN messages (interleaved Time/Level)
+  const params = [
+    { offset: 0, value: attackTimeValue },  // Attack Time
+    { offset: 1, value: attackLevel },      // Attack Level
+    { offset: 2, value: decayTimeValue },   // Decay Time
+    { offset: 3, value: decayLevel },       // Decay Level
+    { offset: 4, value: sustainTimeValue }, // Sustain Time
+    { offset: 5, value: sustainLevel },     // Sustain Level
+    { offset: 6, value: releaseTimeValue }, // Release Time
+    { offset: 7, value: releaseLevel }      // Release Level
+  ];
+  
+  params.forEach(({ offset, value }) => {
+    const nrpn: NRPNMessage = {
+      paramMSB: 0,
+      paramLSB: envRowBase + offset,
+      valueMSB: (value >> 7) & 0x7F,
+      valueLSB: value & 0x7F
+    };
+    sendNRPN(nrpn, channel);
+  });
+}
+
+/**
+ * Send modulation index (IM1-IM6) via NRPN
+ * NRPN [0, 4 + imIndex*2] for IM value
+ * NRPN [0, 5 + imIndex*2] for IM velocity sensitivity
+ * UI uses 0-100, firmware uses 0-1000 (multiply by 10)
+ * NOTE: isFeedback parameter - if true, always sends to IM6 (index 5) regardless of imIndex
+ */
+export function sendModulationIM(imIndex: number, value: number, isFeedback: boolean = false, channel: number = currentChannel) {
+  console.log('🎹 sendModulationIM called:', { imIndex, value, isFeedback, channel, hasOutput: !!midiOutput });
+  
+  // Feedback always goes to IM6 (index 5), regardless of sequential position
+  const actualIndex = isFeedback ? 5 : imIndex;
+  
+  if (actualIndex < 0 || actualIndex > 5) {
+    console.warn('⚠️ IM index must be 0-5, got:', actualIndex);
+    return;
+  }
+  
+  // UI value: 0-100
+  // Feedback: firmware 0-100 (represents 0.0-1.0)
+  // Regular IMs: firmware 0-1000 (represents 0.0-10.0, multiply by 10)
+  const firmwareValue = isFeedback 
+    ? Math.round(Math.max(0, Math.min(100, value)))
+    : Math.round(Math.max(0, Math.min(100, value)) * 10);
+  
+  const nrpn: NRPNMessage = {
+    paramMSB: 0,
+    paramLSB: 4 + actualIndex * 2, // IM1=4, IM2=6, IM3=8, IM4=10, IM5=12, IM6=14
+    valueMSB: (firmwareValue >> 7) & 0x7F,
+    valueLSB: firmwareValue & 0x7F
+  };
+  
+  console.log('📤 Sending IM via NRPN:', { 
+    displayIndex: actualIndex + 1, 
+    isFeedback,
+    nrpn, 
+    firmwareValue, 
+    uiValue: value 
+  });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send modulation velocity sensitivity (IMVelo1-6) via NRPN
+ * NRPN [0, 5 + imIndex*2] for velocity
+ * NOTE: isFeedback parameter - if true, always sends to IMVelo6 (index 5) regardless of imIndex
+ */
+export function sendModulationVelo(imIndex: number, value: number, isFeedback: boolean = false, channel: number = currentChannel) {
+  console.log('🎹 sendModulationVelo called:', { imIndex, value, isFeedback, channel, hasOutput: !!midiOutput });
+  
+  // Feedback always goes to IMVelo6 (index 5), regardless of sequential position
+  const actualIndex = isFeedback ? 5 : imIndex;
+  
+  if (actualIndex < 0 || actualIndex > 5) {
+    console.warn('⚠️ IM velo index must be 0-5, got:', actualIndex);
+    return;
+  }
+  
+  // UI value: 0-100
+  // Feedback: firmware 0-100 (represents 0.0-1.0 scale)
+  // Regular IMVelo: firmware 0-1000 (represents 0.0-10.0 scale, multiply by 10)
+  const firmwareValue = isFeedback 
+    ? Math.round(Math.max(0, Math.min(100, value)))
+    : Math.round(Math.max(0, Math.min(100, value)) * 10);
+  
+  const nrpn: NRPNMessage = {
+    paramMSB: 0,
+    paramLSB: 5 + actualIndex * 2, // IMVelo1=5, IMVelo2=7, etc.
+    valueMSB: (firmwareValue >> 7) & 0x7F,
+    valueLSB: firmwareValue & 0x7F
+  };
+  
+  console.log('📤 Sending IM Velo via NRPN:', { 
+    displayIndex: actualIndex + 1, 
+    isFeedback,
+    nrpn, 
+    firmwareValue, 
+    uiValue: value 
+  });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Calculate the global IM index for a modulation link
+ * Traverses operators in order to find the position of the source->target link
+ * Returns -1 if link not found
+ */
+export function calculateIMIndex(patch: import('../types/patch').Patch, sourceId: number, targetId: number): number {
+  let imIndex = 0;
+  
+  console.log('🔍 calculateIMIndex:', { sourceId, targetId, totalOperators: patch.operators.length });
+  
+  for (const op of patch.operators) {
+    console.log(`  Checking OP${op.id}, targets:`, op.target.map(t => `OP${t.id}`));
+    
+    for (const target of op.target) {
+      // Check if this is the link we're looking for
+      if (op.id === sourceId && target.id === targetId) {
+        const isFeedback = sourceId === targetId;
+        console.log(`  ✅ Found${isFeedback ? ' FEEDBACK' : ''} link OP${sourceId}→OP${targetId} at index ${imIndex}`);
+        return imIndex;
+      }
+      // Only count valid links (where target exists in operators)
+      if (patch.operators.some(o => o.id === target.id)) {
+        imIndex++;
+      }
+    }
+  }
+  
+  console.warn(`❌ Link OP${sourceId}→OP${targetId} not found!`);
+  return -1; // Link not found
 }
 
 /**

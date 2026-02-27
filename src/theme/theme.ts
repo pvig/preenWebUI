@@ -37,6 +37,20 @@ export interface Theme {
     // Knobs et contrôles
     knobBackground: string;
     knobStroke: string;
+    knobLabel: string;
+    knobTick: string;
+    
+    // Couleurs spécifiques de knobs
+    knobVolume: string;       // Vert pour volume/amplitude
+    knobFrequency: string;    // Bleu pour fréquence/pitch
+    knobPhase: string;        // Vert clair pour phase
+    knobBias: string;         // Orange pour bias/offset
+    knobFilter: string;       // Rouge pour filtres
+    knobLfo: string;          // Violet pour LFO
+    knobModulation: string;   // Bleu clair pour IM/modulation
+    knobVelocity: string;     // Violet foncé pour vélocité
+    knobArp: string;          // Rouge pour arpeggiator
+    knobSeq: string;          // Violet pour séquenceur
     
     // Highlights
     highlight: string;
@@ -78,6 +92,19 @@ export const darkTheme: Theme = {
     
     knobBackground: '#2d3748',
     knobStroke: '#4a5568',
+    knobLabel: '#a0aec0',
+    knobTick: '#718096',
+    
+    knobVolume: '#68D391',
+    knobFrequency: '#63B3ED',
+    knobPhase: '#48BB78',
+    knobBias: '#F6AD55',
+    knobFilter: '#F56565',
+    knobLfo: '#9F7AEA',
+    knobModulation: '#0ea5e9',
+    knobVelocity: '#7c3aed',
+    knobArp: '#E53E3E',
+    knobSeq: '#9CA3AF',
     
     highlight: '#fbbf24',
     highlightGlow: 'rgba(251, 191, 36, 0.5)',
@@ -117,6 +144,19 @@ export const lightTheme: Theme = {
     
     knobBackground: '#ffffff',
     knobStroke: '#e2e8f0',
+    knobLabel: '#718096',
+    knobTick: '#a0aec0',
+    
+    knobVolume: '#38a169',
+    knobFrequency: '#3182ce',
+    knobPhase: '#2f855a',
+    knobBias: '#dd6b20',
+    knobFilter: '#e53e3e',
+    knobLfo: '#805ad5',
+    knobModulation: '#0ea5e9',
+    knobVelocity: '#6b46c1',
+    knobArp: '#c53030',
+    knobSeq: '#718096',
     
     highlight: '#d69e2e',
     highlightGlow: 'rgba(214, 158, 46, 0.5)',

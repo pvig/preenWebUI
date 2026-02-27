@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { useThemeStore } from '../../theme/themeStore';
 
 type ValuePosition = 'bottom' | 'left' | 'none';
 type LabelPosition = 'top' | 'left' | 'none';
@@ -38,6 +39,7 @@ function KnobBase({
   valuePosition = 'bottom',
   labelPosition = 'top'
 }: KnobBaseProps) {
+  const { theme } = useThemeStore();
   const center = size / 2;
   const radius = knobRadius ?? (center - 10);
   const tickLength = 6;
@@ -157,7 +159,7 @@ function KnobBase({
         <div
           style={{
             fontSize: 11,
-            color: "#888",
+            color: theme.colors.knobLabel,
             fontWeight: "bold",
             minWidth: '55px',
             textAlign: 'right',
@@ -217,8 +219,8 @@ function KnobBase({
             stroke={strokeColor}
             strokeWidth="2"
           />
-          <line {...tickMin} stroke="#888" strokeWidth="2" />
-          <line {...tickMax} stroke="#888" strokeWidth="2" />
+          <line {...tickMin} stroke={theme.colors.knobTick} strokeWidth="2" />
+          <line {...tickMax} stroke={theme.colors.knobTick} strokeWidth="2" />
           <line
             x1={center}
             y1={center}
@@ -242,7 +244,7 @@ function KnobBase({
               fontSize: 12,
               fontWeight: "bold",
               pointerEvents: "none",
-              color: "#888"
+              color: theme.colors.knobLabel
             }}
           >
             {label}

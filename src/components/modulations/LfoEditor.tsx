@@ -146,7 +146,7 @@ export const LfoEditor: React.FC = () => {
               step={0.1}
               value={lfo.frequency}
               onChange={(frequency) => updateLfo(activeLfo, { frequency })}
-              color="#9F7AEA"
+              color={theme.colors.knobLfo}
               backgroundColor={theme.colors.knobBackground}
               strokeColor={theme.colors.knobStroke}
               renderLabel={(v) => v.toFixed(1) + ' Hz'}
@@ -178,7 +178,7 @@ export const LfoEditor: React.FC = () => {
             step={1}
             value={lfo.phase}
             onChange={(phase) => updateLfo(activeLfo, { phase })}
-            color="#48BB78"
+            color={theme.colors.knobPhase}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => Math.round(v) + '°'}
@@ -195,7 +195,7 @@ export const LfoEditor: React.FC = () => {
             step={0.01}
             value={lfo.bias}
             onChange={(bias) => updateLfo(activeLfo, { bias })}
-            color="#F6AD55"
+            color={theme.colors.knobBias}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => v.toFixed(2)}
@@ -215,7 +215,7 @@ export const LfoEditor: React.FC = () => {
               const keysync = value < 0 ? 'Off' : Math.max(0, value);
               updateLfo(activeLfo, { keysync });
             }}
-            color="#63B3ED"
+            color={theme.colors.knobFrequency}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => v < 0 ? 'Off' : v.toFixed(1)}

@@ -284,7 +284,7 @@ export const SeqEditor: React.FC = () => {
             step={0.01}
             value={seq.gate}
             onChange={(gate) => updateStepSequencer(activeSeq, { gate })}
-            color="#9F7AEA"
+            color={theme.colors.knobSeq}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
             renderLabel={(v) => `${(v * 100).toFixed(0)}%`}
@@ -313,7 +313,7 @@ export const SeqEditor: React.FC = () => {
               step={1}
               value={seq.bpm}
               onChange={(bpm) => updateStepSequencer(activeSeq, { bpm })}
-              color="#48BB78"
+              color={theme.colors.knobPhase}
               backgroundColor={theme.colors.knobBackground}
               strokeColor={theme.colors.knobStroke}
               renderLabel={(v) => Math.round(v)}

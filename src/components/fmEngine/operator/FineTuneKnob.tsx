@@ -36,7 +36,7 @@ export const FineTuneKnob: React.FC<FineTuneKnobProps> = ({
       onChange={setFineValue}
       label={label}
       renderLabel={(v: number) => v.toFixed(2)}
-      color="#1E90FF"
+      color={theme.colors.knobFrequency}
       strokeColor={theme.colors.knobStroke}
       backgroundColor={theme.colors.knobBackground}
       size={60}
