@@ -174,13 +174,18 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
 
   const pointsEnv1: PointsEnv1 | null = isEnv1 ? {
     start: getScreenPosition(0, 0),
-    attack: getScreenPosition((envelope as EnvelopeDataADSR).attack.time, (envelope as EnvelopeDataADSR).attack.level),
+    attack: getScreenPosition((envelope as EnvelopeDataADSR).attack.time, 1),
     decay: getScreenPosition(
       (envelope as EnvelopeDataADSR).attack.time + (envelope as EnvelopeDataADSR).decay.time,
       (envelope as EnvelopeDataADSR).decay.level
     ),
+    // Ajoute un décalage visuel de 5% de la durée totale pour S (sustain)
     sustain: getScreenPosition(
-      (envelope as EnvelopeDataADSR).attack.time + (envelope as EnvelopeDataADSR).decay.time + (envelope as EnvelopeDataADSR).sustain.time,
+      (envelope as EnvelopeDataADSR).attack.time + (envelope as EnvelopeDataADSR).decay.time + Math.max(0.05 * (
+        (envelope as EnvelopeDataADSR).attack.time +
+        (envelope as EnvelopeDataADSR).decay.time +
+        (envelope as EnvelopeDataADSR).release.time
+      ), 0.1),
       (envelope as EnvelopeDataADSR).decay.level  // Sustain level is same as decay level
     ),
     release: getScreenPosition(
@@ -244,7 +249,8 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
     if (isEnv1) {
       checkDistance('attack' as PointType, pointsEnv1!.attack);
       checkDistance('decay' as PointType, pointsEnv1!.decay);
-      checkDistance('sustain' as PointType, pointsEnv1!.sustain, false); // Sustain: only time (Y axis / vertical line)
+      // S (sustain) suit D, donc pas de drag
+      // checkDistance('sustain' as PointType, pointsEnv1!.sustain, true); // désactivé
       checkDistance('release' as PointType, pointsEnv1!.release);
     } else {
       checkDistance('silence' as PointType, pointsEnv2!.silence, false); // Silence: only time, level locked at 0
@@ -310,19 +316,19 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
           break;
         }
         case 'sustain': {
-          // Sustain: only time can be modified, level follows decay level
-          const prevTime = env.attack.time + env.decay.time;
-          newEnvelope.sustain = { 
-            ...env.sustain,
-            time: Math.max(0, time - prevTime)
-          };
+          // Sustain: non éditable, suit decay
           break;
         }
         case 'release': {
+          // Empêche R d'être placé avant S (décalage visuel inclus)
           const prevTime = env.attack.time + env.decay.time + env.sustain.time;
-          newEnvelope.release = { 
-            time: Math.max(0, time - prevTime), 
-            level: Math.max(0, Math.min(1, level)) 
+          // Décalage visuel de S (doit matcher celui du point S)
+          const sustainVisualOffset = Math.max(0.05 * (env.attack.time + env.decay.time + env.release.time), 0.1);
+          const minReleaseTime = prevTime + sustainVisualOffset;
+          const releaseTime = Math.max(minReleaseTime, time);
+          newEnvelope.release = {
+            time: releaseTime - prevTime,
+            level: Math.max(0, Math.min(1, level))
           };
           break;
         }
@@ -387,9 +393,21 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
     Z
   `;
 
+
   // Draw grid lines
   const gridLines = [];
-  const numVerticalLines = 8;
+  // Calculate total envelope duration (maxTime) as in getScreenPosition
+  const totalTime = isEnv1
+    ? (envelope as EnvelopeDataADSR).attack.time +
+      (envelope as EnvelopeDataADSR).decay.time +
+      (envelope as EnvelopeDataADSR).sustain.time +
+      (envelope as EnvelopeDataADSR).release.time
+    : (envelope as EnvelopeDataSAR).silence.time +
+      (envelope as EnvelopeDataSAR).attack.time +
+      (envelope as EnvelopeDataSAR).release.time;
+  const maxTime = Math.max(totalTime, 4);
+  // 1 vertical line per second, min 2, max 16
+  const numVerticalLines = Math.max(2, Math.min(16, Math.round(maxTime)));
   for (let i = 0; i <= numVerticalLines; i++) {
     const x = MARGIN.left + (i / numVerticalLines) * graphWidth;
     gridLines.push(
@@ -534,7 +552,7 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
             <ValueLabel $highlighted={hoveredPoint === 'attack' || draggingPoint === 'attack'}>
               <LabelName>A</LabelName>
               <LabelValue>{(envelope as EnvelopeDataADSR).attack.time.toFixed(2)}</LabelValue>
-              <LabelValue>{((envelope as EnvelopeDataADSR).attack.level * 100).toFixed(0)}</LabelValue>
+              <LabelValue>100</LabelValue>
             </ValueLabel>
             <ValueLabel $highlighted={hoveredPoint === 'decay' || draggingPoint === 'decay'}>
               <LabelName>D</LabelName>

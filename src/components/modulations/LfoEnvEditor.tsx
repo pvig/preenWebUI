@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { sendLfoEnvelope } from '../../midi/midiService';
+import { sendLfoEnvelope2 } from '../../midi/midiService';
 import styled from 'styled-components';
 import KnobBase from '../knobs/KnobBase';
 import { useLfoEnvelope, updateLfoEnvelope } from '../../stores/patchStore';
@@ -95,90 +97,108 @@ export const LfoEnvEditor: React.FC = () => {
     'Attack',   // Loop from end of silence: attack + release only
   ];
 
-  // Convert AdsrState to EnvelopeData format based on envelope type
+  // Convert PreenFM-style ADSR to EnvelopeDataADSR for visualizer (Env1)
   const toEnvelopeData = (): EnvelopeDataADSR | EnvelopeDataSAR => {
     if (activeEnv === 0) {
-      // Env1: ADSR structure
+      // Env1: 5-point structure for visualizer, but only 4 user params
+      // Points: 0 (0,0), 1 (A,1), 2 (A+D,S), 3 (A+D, S), 4 (A+D+R,0)
+      const attackTime = env.adsr.attack.time;
+      const decayTime = env.adsr.decay.time;
+      const sustainLevel = env.adsr.decay.level / 100; // S = decay.level
+      const releaseTime = env.adsr.release.time;
       return {
         attack: {
-          time: env.adsr.attack.time,
-          level: env.adsr.attack.level / 100,
+          time: attackTime,
+          level: 1,
         },
         decay: {
-          time: env.adsr.decay.time,
-          level: env.adsr.decay.level / 100,
+          time: decayTime,
+          level: sustainLevel,
         },
         sustain: {
-          time: env.adsr.sustain.time,
-          level: env.adsr.sustain.level / 100,
+          time: 0, // Not user-editable, just for plateau
+          level: sustainLevel,
         },
         release: {
-          time: env.adsr.release.time,
-          level: env.adsr.release.level / 100,
+          time: releaseTime,
+          level: 0,
         },
-      } as EnvelopeDataADSR;
+      };
     } else {
       // Env2: Silence-Attack-Release structure
       return {
         silence: {
-          time: env.silence,  // silence field stores the silence time
+          time: env.silence,
           level: 0,
         },
         attack: {
           time: env.adsr.attack.time,
-          level: 1,  // Attack level is always 1 for Env2
+          level: 1,
         },
         release: {
-          time: env.adsr.decay.time,  // Using decay field to store release time
+          time: env.adsr.decay.time,
           level: 0,
         },
-      } as EnvelopeDataSAR;
+      };
     }
   };
 
-  // Handle envelope changes from visualizer
+  // Handle envelope changes from visualizer (Env1: only 4 params editable)
   const handleEnvelopeChange = (envelopeData: EnvelopeDataADSR | EnvelopeDataSAR) => {
     if (activeEnv === 0) {
-      // Env1: ADSR structure
       const env1Data = envelopeData as EnvelopeDataADSR;
+      // Only allow editing of attack.time, decay.time, decay.level (S), release.time
       updateLfoEnvelope(activeEnv, {
         adsr: {
           attack: {
             time: env1Data.attack.time,
-            level: env1Data.attack.level * 100,
+            level: 0, // Always 0 for PreenFM
           },
           decay: {
             time: env1Data.decay.time,
-            level: env1Data.decay.level * 100,
+            level: env1Data.decay.level * 100, // S level (0-1) to 0-100
           },
           sustain: {
-            time: env1Data.sustain.time,
-            level: env1Data.decay.level * 100, // Sustain level follows decay level
+            time: 0, // Not user-editable
+            level: env1Data.decay.level * 100, // S = D.level
           },
           release: {
             time: env1Data.release.time,
-            level: env1Data.release.level * 100,
+            level: 0, // Always 0 for PreenFM
           },
         },
       });
+      // Send values to PreenFM in real time
+      sendLfoEnvelope(0, {
+        attack: env1Data.attack.time,
+        decay: env1Data.decay.time,
+        sustain: env1Data.decay.level,
+        release: env1Data.release.time
+      });
     } else {
-      // Env2: Silence-Attack-Release structure
+      // Env2: Silence-Attack-Release
       const env2Data = envelopeData as EnvelopeDataSAR;
       updateLfoEnvelope(activeEnv, {
         silence: env2Data.silence.time,
         adsr: {
           attack: {
             time: env2Data.attack.time,
-            level: 100,  // Attack level always 100 for Env2
+            level: 100,
           },
           decay: {
-            time: env2Data.release.time,  // Using decay field to store release time
+            time: env2Data.release.time,
             level: 0,
           },
-          // Sustain and release not used in Env2
           sustain: { time: 0, level: 0 },
           release: { time: 0, level: 0 },
         },
+      });
+      // Send values to PreenFM in real time for Env2
+      sendLfoEnvelope2({
+        silence: env2Data.silence.time,
+        attack: env2Data.attack.time,
+        release: env2Data.release.time,
+        loopMode: env.loopMode === 'Off' ? 0 : env.loopMode === 'Silence' ? 1 : 2
       });
     }
   };
@@ -207,7 +227,7 @@ export const LfoEnvEditor: React.FC = () => {
 
       <EnvControls>
         {activeEnv === 0 ? (
-          // Env1: ADSR controls
+          // Env1: Only 4 user-editable parameters (A time, D time, S level, R time)
           <>
             <ControlGroup>
               <KnobBase
@@ -216,37 +236,27 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.adsr.attack.time}
-                onChange={(time) => updateLfoEnvelope(activeEnv, { 
-                  adsr: { ...env.adsr, attack: { ...env.adsr.attack, time } } 
-                })}
+                onChange={(time) => {
+                  updateLfoEnvelope(activeEnv, {
+                    adsr: { ...env.adsr, attack: { ...env.adsr.attack, time } }
+                  });
+                  if (activeEnv === 0) {
+                    sendLfoEnvelope(0, {
+                      attack: time,
+                      decay: env.adsr.decay.time,
+                      sustain: env.adsr.decay.level / 100,
+                      release: env.adsr.release.time
+                    });
+                  }
+                }}
                 color={theme.colors.adsrAttack}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
-                label="Attack"
+                label="Attack Time"
                 labelPosition="left"
               />
             </ControlGroup>
-
-            <ControlGroup>
-              <KnobBase
-                size={60}
-                min={0}
-                max={100}
-                step={1}
-                value={env.adsr.attack.level}
-                onChange={(level) => updateLfoEnvelope(activeEnv, { 
-                  adsr: { ...env.adsr, attack: { ...env.adsr.attack, level } } 
-                })}
-                color={theme.colors.knobBias}
-                backgroundColor={theme.colors.knobBackground}
-                strokeColor={theme.colors.knobStroke}
-                renderLabel={(v) => Math.round(v)}
-                label="Atk Level"
-                labelPosition="left"
-              />
-            </ControlGroup>
-
             <ControlGroup>
               <KnobBase
                 size={60}
@@ -254,18 +264,27 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.adsr.decay.time}
-                onChange={(time) => updateLfoEnvelope(activeEnv, { 
-                  adsr: { ...env.adsr, decay: { ...env.adsr.decay, time } } 
-                })}
+                onChange={(time) => {
+                  updateLfoEnvelope(activeEnv, {
+                    adsr: { ...env.adsr, decay: { ...env.adsr.decay, time } }
+                  });
+                  if (activeEnv === 0) {
+                    sendLfoEnvelope(0, {
+                      attack: env.adsr.attack.time,
+                      decay: time,
+                      sustain: env.adsr.decay.level / 100,
+                      release: env.adsr.release.time
+                    });
+                  }
+                }}
                 color={theme.colors.adsrDecay}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
-                label="Decay"
+                label="Decay Time"
                 labelPosition="left"
               />
             </ControlGroup>
-
             <ControlGroup>
               <KnobBase
                 size={60}
@@ -273,43 +292,31 @@ export const LfoEnvEditor: React.FC = () => {
                 max={100}
                 step={1}
                 value={env.adsr.decay.level}
-                onChange={(level) => updateLfoEnvelope(activeEnv, { 
-                  adsr: { 
-                    ...env.adsr, 
-                    decay: { ...env.adsr.decay, level },
-                    sustain: { ...env.adsr.sustain, level } // Sustain level follows decay level
-                  } 
-                })}
+                onChange={(level) => {
+                  updateLfoEnvelope(activeEnv, {
+                    adsr: {
+                      ...env.adsr,
+                      decay: { ...env.adsr.decay, level },
+                      sustain: { ...env.adsr.sustain, level }
+                    }
+                  });
+                  if (activeEnv === 0) {
+                    sendLfoEnvelope(0, {
+                      attack: env.adsr.attack.time,
+                      decay: env.adsr.decay.time,
+                      sustain: level / 100,
+                      release: env.adsr.release.time
+                    });
+                  }
+                }}
                 color={theme.colors.adsrSustain}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => Math.round(v)}
-                label="Dec Level"
+                label="Sustain Level"
                 labelPosition="left"
               />
             </ControlGroup>
-
-            <ControlGroup>
-              <KnobBase
-                size={60}
-                min={0}
-                max={16}
-                step={0.01}
-                value={env.adsr.sustain.time}
-                onChange={(time) => updateLfoEnvelope(activeEnv, { 
-                  adsr: { ...env.adsr, sustain: { ...env.adsr.sustain, time } } 
-                })}
-                color={theme.colors.knobLfo}
-                backgroundColor={theme.colors.knobBackground}
-                strokeColor={theme.colors.knobStroke}
-                renderLabel={(v) => v.toFixed(2)}
-                label="Sustain"
-                labelPosition="left"
-              />
-            </ControlGroup>
-
-            {/* Note: Sustain level automatically follows Decay level */}
-
             <ControlGroup>
               <KnobBase
                 size={60}
@@ -317,14 +324,24 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.adsr.release.time}
-                onChange={(time) => updateLfoEnvelope(activeEnv, { 
-                  adsr: { ...env.adsr, release: { ...env.adsr.release, time } } 
-                })}
+                onChange={(time) => {
+                  updateLfoEnvelope(activeEnv, {
+                    adsr: { ...env.adsr, release: { ...env.adsr.release, time } }
+                  });
+                  if (activeEnv === 0) {
+                    sendLfoEnvelope(0, {
+                      attack: env.adsr.attack.time,
+                      decay: env.adsr.decay.time,
+                      sustain: env.adsr.decay.level / 100,
+                      release: time
+                    });
+                  }
+                }}
                 color={theme.colors.adsrRelease}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
                 renderLabel={(v) => v.toFixed(2)}
-                label="Release"
+                label="Release Time"
                 labelPosition="left"
               />
             </ControlGroup>
@@ -339,7 +356,17 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.silence}
-                onChange={(silence) => updateLfoEnvelope(activeEnv, { silence })}
+                onChange={(silence) => {
+                  updateLfoEnvelope(activeEnv, { silence });
+                  if (activeEnv === 1) {
+                    sendLfoEnvelope2({
+                      silence: env.silence,
+                      attack: env.adsr.attack.time,
+                      release: env.adsr.decay.time,
+                      loopMode: env.loopMode === 'Off' ? 0 : env.loopMode === 'Silence' ? 1 : 2
+                    });
+                  }
+                }}
                 color={theme.colors.knobSeq}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
@@ -356,9 +383,19 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.adsr.attack.time}
-                onChange={(time) => updateLfoEnvelope(activeEnv, { 
-                  adsr: { ...env.adsr, attack: { time, level: 100 } }  // Level fixed at 100
-                })}
+                onChange={(time) => {
+                  updateLfoEnvelope(activeEnv, {
+                    adsr: { ...env.adsr, attack: { time, level: 100 } }
+                  });
+                  if (activeEnv === 1) {
+                    sendLfoEnvelope2({
+                      silence: env.silence,
+                      attack: time,
+                      release: env.adsr.decay.time,
+                      loopMode: env.loopMode === 'Off' ? 0 : env.loopMode === 'Silence' ? 1 : 2
+                    });
+                  }
+                }}
                 color={theme.colors.adsrAttack}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
@@ -375,9 +412,19 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.adsr.decay.time}
-                onChange={(time) => updateLfoEnvelope(activeEnv, { 
-                  adsr: { ...env.adsr, decay: { time, level: 0 } }  // Level fixed at 0
-                })}
+                onChange={(time) => {
+                  updateLfoEnvelope(activeEnv, {
+                    adsr: { ...env.adsr, decay: { time, level: 0 } }
+                  });
+                  if (activeEnv === 1) {
+                    sendLfoEnvelope2({
+                      silence: env.silence,
+                      attack: env.adsr.attack.time,
+                      release: time,
+                      loopMode: env.loopMode === 'Off' ? 0 : env.loopMode === 'Silence' ? 1 : 2
+                    });
+                  }
+                }}
                 color={theme.colors.knobFrequency}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
@@ -395,7 +442,18 @@ export const LfoEnvEditor: React.FC = () => {
             <ControlLabel>Loop Mode</ControlLabel>
             <Select 
               value={env.loopMode}
-              onChange={(e) => updateLfoEnvelope(activeEnv, { loopMode: e.target.value as LfoEnvLoopMode })}
+              onChange={(e) => {
+                const newMode = e.target.value as LfoEnvLoopMode;
+                updateLfoEnvelope(activeEnv, { loopMode: newMode });
+                if (activeEnv === 1) {
+                  sendLfoEnvelope2({
+                    silence: env.silence,
+                    attack: env.adsr.attack.time,
+                    release: env.adsr.decay.time,
+                    loopMode: newMode === 'Off' ? 0 : newMode === 'Silence' ? 1 : 2
+                  });
+                }
+              }}
             >
               {loopModes.map((mode) => (
                 <option key={mode} value={mode}>

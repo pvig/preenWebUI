@@ -1,4 +1,110 @@
 /**
+ * Envoie tous les paramètres d'un LFO au PreenFM3 via CC
+ * lfoIndex: 0 = LFO1, 1 = LFO2, 2 = LFO3
+ * params: { frequency, shape, phase, bias }
+ */
+/**
+ * Envoie un paramètre LFO au PreenFM3 via NRPN (shape, freq, bias, keysync, phase)
+ * lfoIndex: 0 = LFO1, 1 = LFO2, 2 = LFO3
+ * param: 'shape' | 'frequency' | 'bias' | 'keysync' | 'phase'
+ * value: valeur UI (voir mapping ci-dessous)
+ */
+export function sendLfoParamNRPN(lfoIndex: 0 | 1 | 2, param: 'shape' | 'frequency' | 'bias' | 'keysync' | 'phase', value: number) {
+  // Mapping NRPN LSB pour chaque LFO et paramètre
+  const NRPN_LSB = {
+    shape:   [40, 44, 48],
+    frequency: [41, 45, 49],
+    bias:    [42, 46, 50],
+    keysync: [43, 47, 51],
+    phase:   [68, 69, 70],
+  };
+  const lsb = NRPN_LSB[param][lfoIndex];
+  let rawValue = 0;
+  switch (param) {
+    case 'shape':
+      // 0-7 (index)
+      rawValue = Math.max(0, Math.min(7, Math.round(value)));
+      break;
+    case 'frequency':
+      // UI: 0-99.9 Hz → NRPN: 0-16383 (0-100)
+      rawValue = Math.max(0, Math.min(16383, Math.round((value / 100) * 16383)));
+      break;
+    case 'bias':
+      // UI: -1 à +1 → NRPN: 0-16383 (-100 à +100)
+      rawValue = Math.max(0, Math.min(16383, Math.round(((value + 1) / 2) * 16383)));
+      break;
+    case 'keysync':
+      // UI: 0-16 (ou -1 pour Off) → NRPN: 0-16383 (0-16)
+      rawValue = value < 0 ? 0 : Math.max(0, Math.min(16383, Math.round((value / 16) * 16383)));
+      break;
+    case 'phase':
+      // UI: 0-360° → NRPN: 0-16383
+      rawValue = Math.max(0, Math.min(16383, Math.round((value / 360) * 16383)));
+      break;
+  }
+  const nrpn = {
+    paramMSB: 1,
+    paramLSB: lsb,
+    valueMSB: (rawValue >> 7) & 0x7F,
+    valueLSB: rawValue & 0x7F
+  };
+  sendNRPN(nrpn);
+}
+/**
+ * Envoie l'enveloppe libre 2 (Free Env2) au PreenFM3 via NRPN
+ * silence: temps de silence (s)
+ * attack: temps d'attaque (s)
+ * release: temps de release (s)
+ * loopMode: 0=Off, 1=Silence, 2=Attack
+ */
+export function sendLfoEnvelope2(params: { silence: number, attack: number, release: number, loopMode: number }) {
+  // NRPN MSB=1, LSB: 56=silence, 57=attack, 58=release, 59=loopMode
+  const lsbs = [56, 57, 58, 59];
+  const values = [
+    Math.round(params.silence * 100),   // Silence time (centièmes de seconde)
+    Math.round(params.attack * 100),    // Attack time
+    Math.round(params.release * 100),   // Release time
+    params.loopMode ?? 0                // Loop mode (0-2)
+  ];
+  lsbs.forEach((lsb, i) => {
+    const value = values[i];
+    const nrpn = {
+      paramMSB: 1,
+      paramLSB: lsb,
+      valueMSB: (value >> 7) & 0x7F,
+      valueLSB: value & 0x7F
+    };
+    console.log('📤 Sending LFO Envelope2 NRPN:', { lsb, value, nrpn });
+    sendNRPN(nrpn);
+  });
+}
+/**
+ * Envoie l'enveloppe libre (Free Env1 ou Env2) au PreenFM3 via NRPN
+ * envIndex: 0 = Env1, 1 = Env2
+ * envelope: { attack, decay, sustain, release } (temps en secondes, level 0-1)
+ */
+export function sendLfoEnvelope(envIndex: 0 | 1, envelope: { attack: number, decay: number, sustain: number, release: number }) {
+  // NRPN MSB=1, LSB fixes : Env1=52-55, Env2=57-60
+  const lsbs = envIndex === 0 ? [52, 53, 54, 55] : [57, 58, 59, 60];
+  const values = [
+    Math.round(envelope.attack * 100),   // Attack time (centièmes de seconde)
+    Math.round(envelope.decay * 100),    // Decay time
+    Math.round(envelope.sustain * 100),  // Sustain level (0-100)
+    Math.round(envelope.release * 100),  // Release time
+  ];
+  lsbs.forEach((lsb, i) => {
+    const value = values[i];
+    const nrpn = {
+      paramMSB: 1,
+      paramLSB: lsb,
+      valueMSB: (value >> 7) & 0x7F,
+      valueLSB: value & 0x7F
+    };
+    console.log('📤 Sending LFO Envelope NRPN:', { envIndex, lsb, value, nrpn });
+    sendNRPN(nrpn);
+  });
+}
+/**
  * MIDI Service for PreenFM3 Communication
  * Handles Web MIDI API for sending/receiving CC, NRPN, and SysEx messages
  */
@@ -155,19 +261,22 @@ export function sendAlgorithmChange(algoId: number | string, channel: number = c
 export function sendIMChange(imNumber: number, value: number, channel: number = currentChannel) {
   // IM values are 0-100 in UI, sent as 0-100 in CC
   // PreenFM3 scales: value * 0.1
-  let ccNumber: number;
-  
-  if (imNumber === 6) {
-    ccNumber = PREENFM3_CC.IM_FEEDBACK;
-  } else if (imNumber >= 1 && imNumber <= 5) {
+  // Only IM1-5 are mapped to CCs; IM6 (feedback) is not mapped (overlaps with MIX3)
+  let ccNumber: number | undefined;
+  if (imNumber >= 1 && imNumber <= 5) {
     ccNumber = PREENFM3_CC.IM1 + (imNumber - 1);
+  } else if (imNumber === 6) {
+    // Feedback (IM6) is not mapped to a CC, skip
+    console.warn('IM6 (feedback) is not mapped to a CC, skipping sendCC');
+    return;
   } else {
     console.error('Invalid IM number:', imNumber);
     return;
   }
-  
   const scaledValue = Math.min(127, Math.round(value));
-  sendCC(ccNumber, scaledValue, channel);
+  if (ccNumber !== undefined) {
+    sendCC(ccNumber, scaledValue, channel);
+  }
 }
 
 /**

@@ -4,6 +4,8 @@ import KnobBase from '../knobs/KnobBase';
 import LfoWaveformSelector from './LfoWaveformSelector';
 import { type MidiClockMode, MIDI_CLOCK_MODES, MIDI_CLOCK_LABELS } from '../../types/lfo';
 import { useLfo, updateLfo } from '../../stores/patchStore';
+import { sendLfoParamNRPN } from '../../midi/midiService';
+import { LFO_TYPES } from '../../types/lfo';
 import { useThemeStore } from '../../theme/themeStore';
 
 const LfoContainer = styled.div`
@@ -121,7 +123,11 @@ export const LfoEditor: React.FC = () => {
 
         <LfoWaveformSelector
           value={lfo.shape}
-          onChange={(shape) => updateLfo(activeLfo, { shape })}
+          onChange={(shape) => {
+            updateLfo(activeLfo, { shape });
+            const shapeIndex = LFO_TYPES.indexOf(shape as any);
+            sendLfoParamNRPN(activeLfo, 'shape', shapeIndex >= 0 ? shapeIndex : 0);
+          }}
         />
       </HeaderRow>
 
@@ -145,7 +151,10 @@ export const LfoEditor: React.FC = () => {
               max={99.9}
               step={0.1}
               value={lfo.frequency}
-              onChange={(frequency) => updateLfo(activeLfo, { frequency })}
+              onChange={(frequency) => {
+                updateLfo(activeLfo, { frequency });
+                sendLfoParamNRPN(activeLfo, 'frequency', frequency);
+              }}
               color={theme.colors.knobLfo}
               backgroundColor={theme.colors.knobBackground}
               strokeColor={theme.colors.knobStroke}
@@ -177,7 +186,10 @@ export const LfoEditor: React.FC = () => {
             max={360}
             step={1}
             value={lfo.phase}
-            onChange={(phase) => updateLfo(activeLfo, { phase })}
+            onChange={(phase) => {
+              updateLfo(activeLfo, { phase });
+              sendLfoParamNRPN(activeLfo, 'phase', phase);
+            }}
             color={theme.colors.knobPhase}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
@@ -194,7 +206,10 @@ export const LfoEditor: React.FC = () => {
             max={1}
             step={0.01}
             value={lfo.bias}
-            onChange={(bias) => updateLfo(activeLfo, { bias })}
+            onChange={(bias) => {
+              updateLfo(activeLfo, { bias });
+              sendLfoParamNRPN(activeLfo, 'bias', bias);
+            }}
             color={theme.colors.knobBias}
             backgroundColor={theme.colors.knobBackground}
             strokeColor={theme.colors.knobStroke}
@@ -214,6 +229,7 @@ export const LfoEditor: React.FC = () => {
             onChange={(value) => {
               const keysync = value < 0 ? 'Off' : Math.max(0, value);
               updateLfo(activeLfo, { keysync });
+              sendLfoParamNRPN(activeLfo, 'keysync', value);
             }}
             color={theme.colors.knobFrequency}
             backgroundColor={theme.colors.knobBackground}

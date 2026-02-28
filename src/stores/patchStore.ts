@@ -4,6 +4,8 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { WaveformType, getWaveformId } from '../types/waveform';
 import { sendOperatorMix, sendOperatorPan, sendOperatorFrequency, sendOperatorDetune, sendOperatorWaveform, sendOperatorKeyboardTracking, sendOperatorADSR, sendModulationIM, sendModulationVelo, calculateIMIndex } from '../midi/midiService';
+import { sendCC } from '../midi/midiService';
+import { LFO_TYPES } from '../types/lfo';
 
 import {
   Patch,
@@ -432,11 +434,11 @@ export const usePatchStore = create<PatchStore>()(
             { ...DEFAULT_LFO }
           ];
         }
-        
         if (lfoIndex >= 0 && lfoIndex < 3) {
           Object.assign(state.currentPatch.lfos[lfoIndex], changes);
           state.isModified = true;
           updateLastModified(state.currentPatch);
+          // Synchronisation MIDI LFO : gérée dans LfoEditor.tsx via NRPN
         }
       }),
 
